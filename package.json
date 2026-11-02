@@ -1,0 +1,39 @@
+{
+  "name": "identifier-exchange",
+  "version": "0.0.0",
+  "private": true,
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "publishConfig": {
+    "registry": "https://registry-prod-904690835784.d.codeartifact.eu-west-2.amazonaws.com/npm/registry-prod-repo"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.265.0",
+    "constructs": "10.8.1"
+  },
+  "devDependencies": {
+    "@govuk-connect/dev": "0.0.10",
+    "@types/node": "24.13.3",
+    "aws-cdk": "2.1136.0",
+    "oxfmt": "0.63.0",
+    "oxlint": "1.78.0",
+    "oxlint-tsgolint": "7.0.2001",
+    "vitest": "4.1.10"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@12.4.1",
+  "once": {
+    "team": "identity",
+    "aws": {
+      "region": "eu-west-2",
+      "roles": {
+        "dev": "once-udp-development-admin"
+      }
+    }
+  }
+}

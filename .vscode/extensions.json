@@ -1,0 +1,4 @@
+{
+  "// platform-pkg-dev": "Recommended so lint-on-save matches what the git hooks enforce.",
+  "recommendations": ["oxc.oxc-vscode"]
+}

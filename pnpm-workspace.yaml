@@ -1,0 +1,10 @@
+packages:
+  - '.'
+allowBuilds:
+  '@govuk-connect/dev': true
+  '@govuk-connect/dev@file:../platform-pkg-dev': true
+minimumReleaseAgeExclude:
+  - '@govuk-connect/dev'
+blockExoticSubdeps: true
+trustPolicy: no-downgrade
+minimumReleaseAge: 10080

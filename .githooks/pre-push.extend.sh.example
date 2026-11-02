@@ -1,0 +1,15 @@
+#!/bin/sh
+# Rename to `.githooks/pre-push.extend.sh` to activate. This package only.
+#
+# Runs pre-push, after the shared platform-pkg-dev chain has passed.
+# A non-zero exit blocks the push.
+#
+# Not managed by platform-pkg-dev: `dev sync` never touches this file, and
+# *.example is gitignored so this template stays out of the repo.
+#
+# This is for shell checks. For extra pre-commit *hooks* (semgrep rules, a
+# new hook repo), use pre-commit.extend.yaml in the package root instead -
+# that merges into the generated .pre-commit-config.yaml.
+set -eu
+
+echo "pre-push.extend.sh: nothing to do"

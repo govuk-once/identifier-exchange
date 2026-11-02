@@ -1,0 +1,18 @@
+{
+  // Extends the package config so CDK code is held to the same rules as src/,
+  // overriding only what it genuinely needs.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // The CDK app is executed, never compiled: `cdk synth` runs bin/app.ts
+    // through Node's type stripping, so there is no dist output to produce.
+    "noEmit": true,
+    "rootDir": ".",
+    "types": ["node"],
+
+    // Node's type stripping does not rewrite import specifiers, so a relative
+    // import must name the .ts file actually on disk. Allowed here precisely
+    // because nothing is emitted from this config.
+    "allowImportingTsExtensions": true
+  },
+  "include": ["."]
+}

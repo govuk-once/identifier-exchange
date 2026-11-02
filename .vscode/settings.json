@@ -1,0 +1,34 @@
+{
+  // Requires the oxc.oxc-vscode extension, which VS Code offers on first open.
+  // Without it these settings are inert - linting and formatting then only
+  // happen via `dev lint` / `dev format` and the git hooks.
+  //
+  // The extension resolves oxlint and oxfmt from THIS package's node_modules,
+  // which is why they are direct devDependencies rather than coming through
+  // platform-pkg-dev. `dev sync` keeps them pinned.
+
+  "oxc.enable": true,
+  "oxc.lint.run": "onType",
+  "oxc.configPath": ".oxlintrc.json",
+  "oxc.typeAware": true,
+
+  // Formatting is a separate tool from linting: oxlint has no opinion on
+  // spacing or semicolons, so oxfmt does that and oxlint fixes code smells.
+  "oxc.enable.oxfmt": true,
+  "oxc.fmt.configPath": ".oxfmtrc.json",
+
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.oxc": "explicit"
+  },
+
+  "[typescript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[typescriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[javascript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[json]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[jsonc]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+
+  // ESLint and Prettier are not used in Connect packages.
+  "eslint.enable": false,
+  "prettier.enable": false
+}

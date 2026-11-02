@@ -1,0 +1,36 @@
+# Rename to `pre-commit.extend.yaml` to activate.
+#
+# Package-only overrides, merged into platform-pkg-dev's master config by `dev sync`.
+# Keyed by hook id - this is an overlay, not a full config. Never copy
+# .pre-commit-config.yaml here; that file is generated.
+#
+#   dev sync         regenerate .pre-commit-config.yaml from master + this file
+#   dev pre-commit   run the commit-stage hooks
+#
+# Naming a hook that does not exist is an error listing the valid ids.
+
+# `exclude` and `files` take a LIST here, even though pre-commit wants a single
+# regex. Entries are joined into an alternation and merged with whatever the
+# master already excludes, so this adds to the exclusions rather than replacing.
+#
+# Anchor with (^|/) rather than ^: pre-commit reports paths relative to the git
+# root, so in a monorepo a file arrives as <package>/src/testdata/x.txt.
+#
+# detect-secrets:
+#   exclude:
+#     - (^|/)src/testdata/.*$
+
+# `args`, `additional_dependencies` and `types_or` APPEND to the master's list.
+# Anything else replaces.
+#
+# semgrep:
+#   args:
+#     - --config=p/owasp-top-ten
+
+# A `repos:` key adds entirely new hook repos for this package only.
+#
+# repos:
+#   - repo: https://github.com/example/hooks
+#     rev: v1.0.0
+#     hooks:
+#       - id: example

@@ -1,0 +1,161 @@
+# Managed by platform-pkg-dev - do not edit.
+#
+# Rendered by `dev sync` from platform-pkg-dev's master config. Edits here are
+# overwritten on the next sync. To add hooks for this package only, put them in
+# pre-commit.extend.yaml; they are appended to the list below.
+#
+# Revisions are pinned in platform-pkg-dev's versions.json. Do not run
+# `pre-commit autoupdate` - it moves the revs off those pins. Bump the version
+# in platform-pkg-dev, then run `dev sync`.
+
+default_install_hook_types:
+  - pre-commit
+  - pre-push
+
+# Hooks inherit this unless they set their own `stages`. Note that several
+# upstream pre-commit-hooks declare stages themselves, which wins - those are
+# overridden explicitly below.
+default_stages: [pre-commit]
+
+# Stop pre-commit on first failed hook
+fail_fast: true
+
+repos:
+  # File hygiene and the cheap safety nets. All auto-fixing hooks come first so
+  # later hooks see the corrected files.
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 'v6.0.0'
+    hooks:
+      - id: trailing-whitespace
+        stages: [pre-commit]
+      - id: end-of-file-fixer
+        stages: [pre-commit]
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-yaml
+        # pnpm v9+ uses multi-document YAML in its lockfile, which check-yaml
+        # rejects ("expected a single document in the stream").
+        exclude: '(^|/)pnpm-lock\.yaml$'
+      - id: check-json
+        # JSONC by design - oxlint, VS Code and tsc all accept comments, but
+        # check-json is strict JSON and would reject them.
+        # Kept on one line: (?x) is a global flag in Python's re, so it would
+        # leak verbose mode into anything merged in from pre-commit.extend.yaml.
+        # Anchored with (^|/) rather than ^: pre-commit reports paths relative to
+        # the git root, so in a monorepo these arrive as connect-org/tsconfig.json.
+        exclude: '(^|/)(\.oxlintrc\.json|_oxlintrc\.json|\.oxfmtrc\.json|\.vscode/.*\.json|_vscode/.*\.json|tsconfig.*\.json|oxlint\.base\.json)$'
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-symlinks
+      - id: check-executables-have-shebangs
+        stages: [pre-commit]
+      - id: check-added-large-files
+        stages: [pre-commit]
+        args: [--maxkb=512]
+      - id: detect-private-key
+      - id: no-commit-to-branch
+        args: [--branch, main, --branch, master]
+
+  # Secret scanning. detect-secrets catches high-entropy strings and known
+  # credential shapes that semgrep's rules do not.
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: 'v1.5.0'
+    hooks:
+      - id: detect-secrets
+        # Lockfiles are full of base64 integrity hashes, which trip the
+        # high-entropy detector on every commit that touches them.
+        # (^|/) not ^ - paths are relative to the git root, which in a monorepo
+        # means connect-org/pnpm-lock.yaml rather than pnpm-lock.yaml.
+        exclude: '(^|/)(pnpm-lock\.yaml|package-lock\.json|yarn\.lock|.*\.min\.(js|css)|.*\.snap)$'
+        # Two false positives the keyword detector raises across this estate.
+        # Excluded by line rather than by file, so every other line in those
+        # files is still scanned:
+        #
+        #   "detect-secrets": the pinned hook revision in platform-pkg-dev's
+        #                     versions.json - the detector matches its own name
+        #   TOP_SECRET:       a UK government data classification label, and
+        #                     only where the value repeats the name, which a
+        #                     real credential never does
+        args:
+          - --exclude-lines
+          - '("detect-secrets":|["'']?TOP_SECRET["'']?\s*[:=]\s*["'']TOP_SECRET)'
+
+  # Spell checker for code and documentation.
+  - repo: https://github.com/streetsidesoftware/cspell-cli
+    rev: 'v10.2.0'
+    hooks:
+      - id: cspell
+        args: [--no-exit-code]
+        verbose: true
+        # Optional: uncomment to specify a custom config file path
+        # args: [--config, .cspell.json]
+
+        # semgrep runs on push, not commit: a full ruleset scan is too slow to sit in
+        # front of every commit. detect-secrets stays on commit because it is fast and
+        # a leaked credential must never reach a commit at all.
+  - repo: https://github.com/semgrep/semgrep
+    rev: 'v1.174.0'
+    hooks:
+      - id: semgrep
+        stages: [pre-push]
+        args:
+          - --config=p/typescript
+          - --config=p/secrets
+          - --error
+          - --skip-unknown-extensions
+
+  # Infrastructure scanning is slow, so it runs on push rather than on commit.
+  - repo: https://github.com/bridgecrewio/checkov
+    rev: '3.3.13'
+    hooks:
+      - id: checkov
+        stages: [pre-push]
+        args: [--quiet, --compact]
+
+  # GitHub Actions workflow linting. Fast enough for the commit stage.
+  - repo: https://github.com/rhysd/actionlint
+    rev: 'v1.7.12'
+    hooks:
+      - id: actionlint
+
+  # The Connect toolchain. These call the `dev` CLI, so they always use the
+  # TypeScript, Vitest and oxlint versions platform-pkg-dev pins.
+  #
+  # `dev sync --check` is deliberately NOT a hook here. pre-commit reads this
+  # file up front, so a hook inside the chain would validate a config that had
+  # already been used. It runs before pre-commit instead - see .githooks/ and
+  # `dev pre-commit`.
+  #
+  # The binary is invoked directly rather than through `pnpm exec`: pre-commit
+  # runs hooks from the git root, which in a monorepo has no package.json, and
+  # corepack then refuses the package's pinned pnpm version.
+  - repo: local
+    hooks:
+      - id: dev-format
+        name: dev format
+        entry: './node_modules/.bin/dev format'
+        language: system
+        pass_filenames: false
+        types_or: [ts, tsx, javascript, json]
+
+      - id: dev-lint
+        name: dev lint
+        entry: './node_modules/.bin/dev lint'
+        language: system
+        pass_filenames: false
+        types_or: [ts, tsx, javascript]
+
+      - id: dev-typecheck
+        name: dev typecheck
+        entry: './node_modules/.bin/dev typecheck'
+        language: system
+        pass_filenames: false
+        types_or: [ts, tsx]
+
+      - id: dev-test
+        name: dev test
+        entry: './node_modules/.bin/dev test run --passWithNoTests'
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

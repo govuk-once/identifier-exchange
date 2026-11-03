@@ -1,6 +1,6 @@
 import type * as cdk from 'aws-cdk-lib';
 import type { Construct } from 'constructs';
-import { GovUkOnceEnvironments } from '../constants/environment.ts';
+import { GovUkOnceEnvironments } from '../constants/environment';
 
 // 1. Define your strongly-typed context schema
 export interface AppContext {

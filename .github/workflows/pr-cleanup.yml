@@ -6,7 +6,7 @@ on:
 
 jobs:
   pipeline:
-    uses: govuk-once/platform-shared-ci-cd/.github/workflows/pr-cleanup.yml@test/consolidate-pipelines
+    uses: govuk-once/platform-shared-ci-cd/.github/workflows/pr-cleanup.yml@test/consolidate-pipeline
     permissions:
       contents: read
       id-token: write

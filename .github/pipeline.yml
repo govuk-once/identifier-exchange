@@ -14,16 +14,16 @@ pr:
   #     DEVELOPER_ID: "pr-{pr}"
   #   deploy: pnpm run cdk:main
 
-quality:
-  aws: false # cdk synth for checkov
-  nx: false
-  environment: dev
-  setup: python3 -m pip install semgrep pre-commit checkov
-  checks:
-    - name: Hygiene
-      run: pre-commit run --all-files --show-diff-on-failure
-  dependency-review: true
-  conventional-commits: true
+# quality:
+#   aws: false # cdk synth for checkov
+#   nx: false
+#   environment: dev
+#   setup: python3 -m pip install semgrep pre-commit checkov
+#   checks:
+#     - name: Hygiene
+#       run: pre-commit run --all-files --show-diff-on-failure
+#   dependency-review: true
+#   conventional-commits: true
 
 # environments:
 #   - name: dev

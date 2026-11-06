@@ -24,8 +24,6 @@ quality:
       run: pre-commit run --all-files --show-diff-on-failure
   dependency-review: true
   conventional-commits: true
-  sonar:
-    test: pnpm test
 
 # environments:
 #   - name: dev

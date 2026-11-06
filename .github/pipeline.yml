@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../../schema/pipeline.schema.json
+#
+# Example: flex on the shared pipelines.
+# Replaces main.yml, ci-pr-quality-checks.yml, ci-pr-cleanup.yml,
+# ci-pr-title-check.yml, _quality-checks.yml, _build-deploy.yml,
+# _moduleE2E.yml and _notify-deployment.yml.
+# Kept as-is: ci-pr-validate-openapi.yml (label-triggered), zap.yml,
+# performance-tests.yml, docs.yml.
+
+application: Flex
+
+pr:
+  title:
+    comment: true
+    guidance-url: https://github.com/govuk-once/flex/blob/main/docs/releases.md
+    examples: |
+      FLEX-123 feat: add user preferences endpoint
+      FLEX-456 fix(udp): handle empty payload
+      FLEX-789 feat!: drop legacy auth

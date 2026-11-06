@@ -3,5 +3,5 @@
   "version": "0.2",
   "language": "en-GB",
   "igrorePaths": ["node_modules", "cdk.out", "pnpm-lock.yaml"],
-  "words": ["govuk"]
+  "words": ["govuk", "semgrep"]
 }

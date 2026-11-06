@@ -8,8 +8,15 @@ pr:
       IDX-456 fix(udp): handle empty payload
       IDX-789 feat!: drop legacy auth
 
+  # ephemeral:
+  #   environment: ephemeral # holds the dev account DEPLOYMENT_ROLE
+  #   env:
+  #     DEVELOPER_ID: "pr-{pr}"
+  #   deploy: pnpm run cdk:main
+
 quality:
   aws: true # cdk synth for checkov
+  nx: false
   setup: python3 -m pip install semgrep pre-commit checkov
   checks:
     - name: Hygiene
@@ -17,8 +24,8 @@ quality:
   dependency-review: true
   conventional-commits: true
   sonar:
-    test: pnpm test:all
+    test: pnpm test
 
-environments:
-  - name: dev
-    deploy: pnpm run cdk:main
+# environments:
+#   - name: dev
+#     deploy: pnpm run cdk:main

@@ -14,3 +14,11 @@ quality:
   checks:
     - name: Hygiene
       run: pre-commit run --all-files --show-diff-on-failure
+  dependency-review: true
+  conventional-commits: true
+  sonar:
+    test: pnpm test:all
+
+environments:
+  - name: dev
+    deploy: pnpm run cdk:main

@@ -10,7 +10,18 @@
   "publishConfig": {
     "registry": "https://registry-prod-904690835784.d.codeartifact.eu-west-2.amazonaws.com/npm/registry-prod-repo"
   },
+  "scripts": {
+    "postinstall": "chmod +x node_modules/@govuk-connect/dev/hooks/* 2>/dev/null || true",
+    "cdk:main": "cdk --app 'npx ts-node --prefer-ts-exts bin/main.app.ts'",
+    "cdk:decoupled": "cdk --app 'npx ts-node --prefer-ts-exts bin/decoupled.app.ts'",
+    "synth:main": "npm run cdk:main -- synth",
+    "deploy:main": "npm run cdk:main -- deploy --all --require-approval never",
+    "synth:decoupled": "npm run cdk:decoupled -- synth",
+    "deploy:decoupled": "npm run cdk:decoupled -- deploy --all --require-approval never",
+    "test": "vitest ."
+  },
   "dependencies": {
+    "@govuk-connect/tag": "^1.0.0",
     "aws-cdk-lib": "2.265.0",
     "constructs": "10.8.1"
   },

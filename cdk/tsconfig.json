@@ -7,12 +7,10 @@
     // through Node's type stripping, so there is no dist output to produce.
     "noEmit": true,
     "rootDir": ".",
-    "types": ["node"],
+    "types": ["node", "vitest/globals"],
 
-    // Node's type stripping does not rewrite import specifiers, so a relative
-    // import must name the .ts file actually on disk. Allowed here precisely
-    // because nothing is emitted from this config.
-    "allowImportingTsExtensions": true
+    "module": "preserve",
+    "moduleResolution": "bundler"
   },
   "include": ["."]
 }

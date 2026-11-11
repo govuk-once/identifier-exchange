@@ -188,6 +188,9 @@ importers:
         specifier: 8.23.1
         version: 8.23.1
     devDependencies:
+      '@esbuild/linux-x64':
+        specifier: 0.28.2
+        version: 0.28.2
       '@govuk-connect/dev':
         specifier: 0.0.10
         version: 0.0.10(@types/node@24.13.3)(oxlint-tsgolint@7.0.2001)(vite@8.3.5(@types/node@24.13.3)(esbuild@0.28.2)(yaml@2.9.0))
@@ -2465,8 +2468,7 @@ snapshots:
   '@esbuild/linux-s390x@0.28.2':
     optional: true
 
-  '@esbuild/linux-x64@0.28.2':
-    optional: true
+  '@esbuild/linux-x64@0.28.2': {}
 
   '@esbuild/netbsd-arm64@0.28.2':
     optional: true

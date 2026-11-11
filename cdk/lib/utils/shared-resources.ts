@@ -21,6 +21,12 @@ export const SharedResources = {
     `/${ContextHelper.get(scope, 'prefix')}/network/availability-zones`,
 
   // SSM parameters published by NetworkSecurityStack.
+  /** For `kms.Key.fromKeyArn`: encrypts the DSQL cluster at rest. */
+  dsqlEncryptionKeyArnParameter: (scope: Construct): string =>
+    `/${ContextHelper.get(scope, 'prefix')}/kms/dsql-encryption-key-arn`,
+  /** For `kms.Key.fromKeyArn`: application-level field encryption. */
+  dataEncryptionKeyArnParameter: (scope: Construct): string =>
+    `/${ContextHelper.get(scope, 'prefix')}/kms/data-encryption-key-arn`,
   /** For `lambda.CodeSigningConfig.fromCodeSigningConfigArn`. */
   codeSigningConfigArnParameter: (scope: Construct): string =>
     `/${ContextHelper.get(scope, 'prefix')}/code-signing/config-arn`,

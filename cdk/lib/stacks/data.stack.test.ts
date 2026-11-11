@@ -5,7 +5,7 @@ import { Match, Template } from 'aws-cdk-lib/assertions';
 import { DSQL_PORT, DataStack } from './data.stack';
 import { ContextHelper } from '../utils/context-helper';
 import { GovUkOnceEnvironments } from '../constants/environment';
-import { TEST_ENV, sharedSubnetIds, sharedVpcId } from '../testing/helpers';
+import { TEST_ENV, sharedSubnetIds, sharedVpcId, ssmRef } from '../testing/helpers';
 
 const synth = (environment = GovUkOnceEnvironments.Dev) => {
   const app = new cdk.App();
@@ -15,12 +15,12 @@ const synth = (environment = GovUkOnceEnvironments.Dev) => {
 };
 
 describe('Data Stack', () => {
-  test('creates one DSQL cluster encrypted with the default AWS-owned key', () => {
+  test('creates one DSQL cluster encrypted with the shared customer-managed key', () => {
     const { template } = synth();
 
     template.resourceCountIs('AWS::DSQL::Cluster', 1);
     template.hasResourceProperties('AWS::DSQL::Cluster', {
-      KmsEncryptionKey: Match.absent(),
+      KmsEncryptionKey: ssmRef(template, '/dev-identifier-exchange/kms/dsql-encryption-key-arn'),
     });
   });
 

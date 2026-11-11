@@ -7,12 +7,9 @@ import { ContextHelper } from '../utils/context-helper';
 import { GovUkOnceEnvironments } from '../constants/environment';
 import { TEST_ENV } from '../testing/helpers';
 
-const synth = () => {
+const synth = (environment = GovUkOnceEnvironments.Dev) => {
   const app = new cdk.App();
-  ContextHelper.setAll(app, {
-    environment: GovUkOnceEnvironments.Dev,
-    appName: 'identifier-exchange',
-  });
+  ContextHelper.setAll(app, { environment, appName: 'identifier-exchange' });
   const stack = new NetworkSecurityStack(app, 'TestNetworkSecurityStack', { env: TEST_ENV });
   return { stack, template: Template.fromStack(stack) };
 };
@@ -235,10 +232,70 @@ describe('Network Security Stack', () => {
     }
   });
 
-  test('uses no cross-stack exports or customer-managed keys', () => {
+  describe('KMS keys', () => {
+    const KEYS = [
+      ['DsqlEncryptionKey', 'dsql', '/dev-identifier-exchange/kms/dsql-encryption-key-arn'],
+      ['DataEncryptionKey', 'data', '/dev-identifier-exchange/kms/data-encryption-key-arn'],
+    ] as const;
+
+    test('creates a separate key for DSQL storage and for field encryption', () => {
+      const { template } = synth();
+
+      template.resourceCountIs('AWS::KMS::Key', KEYS.length);
+    });
+
+    test.each(KEYS)('%s rotates every 90 days and has an alias', (id, name) => {
+      const { template } = synth();
+
+      template.hasResourceProperties('AWS::KMS::Key', {
+        EnableKeyRotation: true,
+        RotationPeriodInDays: 90,
+      });
+      template.hasResourceProperties('AWS::KMS::Alias', {
+        AliasName: `alias/dev-identifier-exchange-${name}`,
+        TargetKeyId: getAtt(id, 'Arn'),
+      });
+    });
+
+    test.each(KEYS)('publishes the %s ARN for downstream stacks', (id, _, parameterName) => {
+      const { template } = synth();
+
+      template.hasResourceProperties('AWS::SSM::Parameter', {
+        Name: parameterName,
+        Value: getAtt(id, 'Arn'),
+      });
+    });
+
+    test('only the DSQL key can be used by the DSQL service, from this account', () => {
+      const { template } = synth();
+      const keys = template.findResources('AWS::KMS::Key');
+      const policyFor = (prefix: string) =>
+        JSON.stringify(
+          Object.entries(keys).find(([logicalId]) => logicalId.startsWith(prefix))?.[1]?.Properties
+            .KeyPolicy,
+        );
+
+      expect(policyFor('DsqlEncryptionKey')).toContain('dsql.amazonaws.com');
+      expect(policyFor('DsqlEncryptionKey')).toContain('aws:SourceAccount');
+      expect(policyFor('DataEncryptionKey')).not.toContain('dsql.amazonaws.com');
+    });
+
+    test('keys are deleted with the stack outside prod', () => {
+      const { template } = synth(GovUkOnceEnvironments.Dev);
+
+      template.allResources('AWS::KMS::Key', { DeletionPolicy: 'Delete' });
+    });
+
+    test('keys are retained in prod', () => {
+      const { template } = synth(GovUkOnceEnvironments.Prod);
+
+      template.allResources('AWS::KMS::Key', { DeletionPolicy: 'Retain' });
+    });
+  });
+
+  test('uses no cross-stack exports', () => {
     const { template } = synth();
 
     expect(JSON.stringify(template.toJSON())).not.toContain('Fn::ImportValue');
-    template.resourceCountIs('AWS::KMS::Key', 0);
   });
 });

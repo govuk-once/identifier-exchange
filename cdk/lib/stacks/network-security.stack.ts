@@ -1,9 +1,12 @@
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as kms from 'aws-cdk-lib/aws-kms';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as signer from 'aws-cdk-lib/aws-signer';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import type { Construct } from 'constructs';
+import { ContextHelper } from '../utils/context-helper';
 import { SharedResources } from '../utils/shared-resources';
 
 // TODO(network engineer sign-off): the CIDR, AZ count and subnet mask are very
@@ -15,6 +18,9 @@ export const MAX_AZS = 2;
 export const SUBNET_CIDR_MASK = 24;
 /** Subnet group name, so consumers can select subnets by name as well as type. */
 export const ISOLATED_SUBNET_GROUP = 'IsolatedPrivate';
+
+/** Matches the rotation period on UDP's keys. */
+export const KEY_ROTATION_PERIOD = cdk.Duration.days(90);
 
 const HTTPS_PORT = 443;
 const ANY_IPV4 = '0.0.0.0/0';
@@ -30,8 +36,13 @@ const ANY_IPV4 = '0.0.0.0/0';
  *   endpoint. The per-cluster DSQL data-plane endpoint lives in DataStack.
  * - An AWS Signer profile and a Lambda code-signing config in ENFORCE mode.
  *
- * Encryption at rest uses each service's default AWS-owned/managed key, so
- * there is no customer-managed key here.
+ * - Two customer-managed KMS keys, kept apart so each can be granted and
+ *   rotated on its own:
+ *   - `dsqlEncryptionKey` encrypts the Aurora DSQL cluster at rest.
+ *   - `dataEncryptionKey` is for application-level envelope encryption of
+ *     individual fields (GenerateDataKey / Decrypt), as UDP's
+ *     `db-kms-encryption` key is. Data migrated from UDP is re-encrypted
+ *     under this key.
  *
  * Downstream stacks read these resources from the SSM parameters in
  * SharedResources (see importSharedVpc) rather than cross-stack exports, so
@@ -45,6 +56,8 @@ export class NetworkSecurityStack extends cdk.Stack {
   public readonly endpointSecurityGroup: ec2.SecurityGroup;
   public readonly signingProfile: signer.SigningProfile;
   public readonly codeSigningConfig: lambda.CodeSigningConfig;
+  public readonly dsqlEncryptionKey: kms.Key;
+  public readonly dataEncryptionKey: kms.Key;
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -76,6 +89,18 @@ export class NetworkSecurityStack extends cdk.Stack {
       untrustedArtifactOnDeployment: lambda.UntrustedArtifactOnDeployment.ENFORCE,
     });
 
+    this.dsqlEncryptionKey = this.createKey(
+      'DsqlEncryptionKey',
+      'dsql',
+      'Aurora DSQL cluster storage',
+    );
+    this.allowDsqlToUseKey(this.dsqlEncryptionKey);
+    this.dataEncryptionKey = this.createKey(
+      'DataEncryptionKey',
+      'data',
+      'Application-level field encryption',
+    );
+
     const isolatedSubnets = this.vpc.isolatedSubnets;
     for (const [parameterId, parameterName, stringValue] of [
       // Read back by importSharedVpc. AZs come from the subnets so the two
@@ -98,6 +123,16 @@ export class NetworkSecurityStack extends cdk.Stack {
         ),
       ],
       [
+        'DsqlEncryptionKeyArnParameter',
+        SharedResources.dsqlEncryptionKeyArnParameter(this),
+        this.dsqlEncryptionKey.keyArn,
+      ],
+      [
+        'DataEncryptionKeyArnParameter',
+        SharedResources.dataEncryptionKeyArnParameter(this),
+        this.dataEncryptionKey.keyArn,
+      ],
+      [
         'CodeSigningConfigArnParameter',
         SharedResources.codeSigningConfigArnParameter(this),
         this.codeSigningConfig.codeSigningConfigArn,
@@ -110,6 +145,46 @@ export class NetworkSecurityStack extends cdk.Stack {
     ] as const) {
       new ssm.StringParameter(this, parameterId, { parameterName, stringValue });
     }
+  }
+
+  /**
+   * Symmetric key with automatic rotation. Retained in prod: anything
+   * encrypted under a deleted key is unrecoverable. Access is granted through
+   * IAM (the default key policy delegates to the account).
+   */
+  private createKey(id: string, name: string, purpose: string): kms.Key {
+    const isProd = ContextHelper.get(this, 'isProd');
+    return new kms.Key(this, id, {
+      alias: ContextHelper.get(this, 'resourceName', name),
+      description: `${purpose} - ${ContextHelper.get(this, 'prefix')}`,
+      enableKeyRotation: true,
+      rotationPeriod: KEY_ROTATION_PERIOD,
+      pendingWindow: cdk.Duration.days(30),
+      removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+    });
+  }
+
+  /**
+   * Lets Aurora DSQL use the key for clusters in this account only.
+   * TODO: verify against the DSQL customer-managed key docs on the first dev
+   * deploy; cluster creation fails if DSQL cannot use the key.
+   */
+  private allowDsqlToUseKey(key: kms.Key): void {
+    key.addToResourcePolicy(
+      new iam.PolicyStatement({
+        sid: 'AllowAuroraDsql',
+        principals: [new iam.ServicePrincipal('dsql.amazonaws.com')],
+        actions: [
+          'kms:Encrypt',
+          'kms:Decrypt',
+          'kms:ReEncrypt*',
+          'kms:GenerateDataKey*',
+          'kms:DescribeKey',
+        ],
+        resources: ['*'],
+        conditions: { StringEquals: { 'aws:SourceAccount': this.account } },
+      }),
+    );
   }
 
   /**

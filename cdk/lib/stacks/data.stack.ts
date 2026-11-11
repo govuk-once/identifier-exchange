@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import * as dsql from 'aws-cdk-lib/aws-dsql';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as kms from 'aws-cdk-lib/aws-kms';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import type { Construct } from 'constructs';
 import { ContextHelper } from '../utils/context-helper';
@@ -18,8 +19,8 @@ export const DSQL_PORT = 5432;
  * can reach the endpoint, and the cluster policy rejects connections that do
  * not come from inside the VPC.
  *
- * Encrypted at rest with DSQL's default AWS-owned key (no customer-managed
- * key to pay for or manage).
+ * Encrypted at rest with the customer-managed DSQL key from
+ * NetworkSecurityStack.
  *
  * The shared VPC is looked up rather than passed in (see SharedResources), so
  * this stack needs an explicit `env` and NetworkSecurityStack must already be
@@ -38,7 +39,18 @@ export class DataStack extends cdk.Stack {
 
     const vpc = importSharedVpc(this);
 
+    // Resolved by CloudFormation at deploy time, like the VPC.
+    const encryptionKey = kms.Key.fromKeyArn(
+      this,
+      'DsqlEncryptionKey',
+      ssm.StringParameter.valueForStringParameter(
+        this,
+        SharedResources.dsqlEncryptionKeyArnParameter(this),
+      ),
+    );
+
     this.cluster = new dsql.CfnCluster(this, 'Cluster', {
+      kmsEncryptionKey: encryptionKey.keyArn,
       deletionProtectionEnabled: isProd,
       // Deny any connection that does not arrive from inside the shared VPC,
       // which closes the cluster's public endpoint.

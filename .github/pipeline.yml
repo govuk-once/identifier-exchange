@@ -5,6 +5,9 @@ application: Identifier Exchange
 node:
   codeartifact: true # @govuk-connect packages
 
+allowBuilds:
+  esbuild: true
+
 pr:
   title:
     comment: true

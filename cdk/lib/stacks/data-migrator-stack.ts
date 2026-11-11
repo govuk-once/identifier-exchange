@@ -10,6 +10,7 @@ import * as triggers from 'aws-cdk-lib/triggers';
 import type { Construct } from 'constructs';
 import { ContextHelper } from '../utils/context-helper';
 import { SharedResources } from '../utils/shared-resources';
+import { importSharedVpc } from '../utils/shared-vpc';
 
 const REPO_ROOT = path.join(import.meta.dirname, '..', '..', '..');
 
@@ -40,9 +41,8 @@ export class DataMigratorStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const vpc = ec2.Vpc.fromLookup(this, 'SharedVpc', {
-      vpcName: SharedResources.vpcName(this),
-    });
+    const vpc = importSharedVpc(this);
+
     const lookup = (parameterName: string) =>
       ssm.StringParameter.valueForStringParameter(this, parameterName);
     const clusterArn = lookup(SharedResources.dsqlClusterArnParameter(this));
@@ -94,7 +94,7 @@ export class DataMigratorStack extends cdk.Stack {
       // race on the schema or the tracking table.
       reservedConcurrentExecutions: 1,
       vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
       securityGroups: [dsqlClientSecurityGroup],
       environment: {
         CLUSTER_ENDPOINT: clusterEndpoint,

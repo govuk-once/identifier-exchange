@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import { ContextHelper } from '../lib/util/contextHelper';
+import { ContextHelper } from '../lib/utils/context-helper';
 import { BackupStack } from '../lib/stacks/backup.stack';
 import { MonitoringStack } from '../lib/stacks/monitoring.stack';
 import { PerformanceStack } from '../lib/stacks/performance.stack';

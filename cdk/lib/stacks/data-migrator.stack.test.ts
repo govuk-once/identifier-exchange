@@ -5,6 +5,7 @@ import { Match, Template } from 'aws-cdk-lib/assertions';
 import { DataMigratorStack } from './data-migrator-stack';
 import { ContextHelper } from '../utils/context-helper';
 import { GovUkOnceEnvironments } from '../constants/environment';
+import { TEST_ENV, sharedSubnetIds, sharedVpcId, ssmRef } from '../testing/helpers';
 
 const synth = () => {
   // Skip esbuild bundling: these tests assert on the template, not the bundle.
@@ -13,22 +14,8 @@ const synth = () => {
     environment: GovUkOnceEnvironments.Dev,
     appName: 'identifier-exchange',
   });
-  const stack = new DataMigratorStack(app, 'TestDataMigratorStack', {
-    env: { account: '123456789012', region: 'eu-west-2' },
-  });
+  const stack = new DataMigratorStack(app, 'TestDataMigratorStack', { env: TEST_ENV });
   return { app, stack, template: Template.fromStack(stack) };
-};
-
-/** Ref to the CloudFormation parameter that reads an SSM parameter. */
-const ssmRef = (template: Template, parameterName: string) => {
-  const [id] = Object.keys(
-    template.findParameters('*', {
-      Type: 'AWS::SSM::Parameter::Value<String>',
-      Default: parameterName,
-    }),
-  );
-  expect(id, `no SSM lookup for ${parameterName}`).toBeDefined();
-  return { Ref: id };
 };
 
 const CLUSTER_ARN = '/dev-identifier-exchange/dsql/cluster-arn';
@@ -45,23 +32,19 @@ const migratorFunction = (template: Template) => {
 };
 
 describe('Data Migrator Stack', () => {
-  test('references DataStack and VpcStack by lookup, not cross-stack exports', () => {
+  test('reads DataStack and NetworkSecurityStack outputs from SSM, not lookups or exports', () => {
     const { app, template } = synth();
 
     expect(JSON.stringify(template.toJSON())).not.toContain('Fn::ImportValue');
     for (const name of [CLUSTER_ARN, CLUSTER_ENDPOINT, CLIENT_SG]) {
       ssmRef(template, name);
     }
-    const missing = app.synth().manifest.missing ?? [];
-    expect(missing).toContainEqual(
-      expect.objectContaining({
-        provider: 'vpc-provider',
-        props: expect.objectContaining({ filter: { 'tag:Name': 'dev-identifier-exchange-vpc' } }),
-      }),
-    );
+    sharedVpcId(template);
+    // Synthesizes without asking the CDK CLI to look anything up in the account.
+    expect(app.synth().manifest.missing ?? []).toEqual([]);
   });
 
-  test('runs the migrator in the VPC with the DSQL client security group', () => {
+  test('runs the migrator in the isolated subnets with the DSQL client security group', () => {
     const { template } = synth();
     const { fn } = migratorFunction(template);
 
@@ -73,7 +56,7 @@ describe('Data Migrator Stack', () => {
       ReservedConcurrentExecutions: 1,
       VpcConfig: {
         SecurityGroupIds: [ssmRef(template, CLIENT_SG)],
-        SubnetIds: expect.arrayContaining([expect.stringMatching(/^p-/)]),
+        SubnetIds: sharedSubnetIds(template),
       },
     });
   });

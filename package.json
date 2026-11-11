@@ -12,8 +12,8 @@
   },
   "scripts": {
     "postinstall": "chmod +x node_modules/@govuk-connect/dev/hooks/* 2>/dev/null || true",
-    "cdk:main": "cdk --app 'npx ts-node --prefer-ts-exts bin/main.app.ts'",
-    "cdk:decoupled": "cdk --app 'npx ts-node --prefer-ts-exts bin/decoupled.app.ts'",
+    "cdk:main": "cd cdk && cdk --app 'npx tsx bin/main.app.ts'",
+    "cdk:decoupled": "cd cdk &&  cdk --app 'npx tsx bin/decoupled.app.ts'",
     "synth:main": "npm run cdk:main -- synth",
     "deploy:main": "npm run cdk:main -- deploy --all --require-approval never",
     "synth:decoupled": "npm run cdk:decoupled -- synth",

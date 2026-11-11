@@ -1,11 +1,11 @@
 import * as cdk from 'aws-cdk-lib';
 import * as dsql from 'aws-cdk-lib/aws-dsql';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as kms from 'aws-cdk-lib/aws-kms';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import type { Construct } from 'constructs';
 import { ContextHelper } from '../utils/context-helper';
 import { SharedResources } from '../utils/shared-resources';
+import { importSharedVpc } from '../utils/shared-vpc';
 
 /** PostgreSQL wire protocol port that the DSQL endpoint listens on. */
 export const DSQL_PORT = 5432;
@@ -18,9 +18,12 @@ export const DSQL_PORT = 5432;
  * can reach the endpoint, and the cluster policy rejects connections that do
  * not come from inside the VPC.
  *
- * The shared VPC and KMS key are looked up rather than passed in (see
- * SharedResources), so this stack needs an explicit `env` and VpcStack must
- * already be deployed in the target account.
+ * Encrypted at rest with DSQL's default AWS-owned key (no customer-managed
+ * key to pay for or manage).
+ *
+ * The shared VPC is looked up rather than passed in (see SharedResources), so
+ * this stack needs an explicit `env` and NetworkSecurityStack must already be
+ * deployed in the target account.
  */
 export class DataStack extends cdk.Stack {
   public readonly cluster: dsql.CfnCluster;
@@ -33,24 +36,9 @@ export class DataStack extends cdk.Stack {
 
     const isProd = ContextHelper.get(this, 'isProd');
 
-    // Resolved at synth time and cached in cdk.context.json.
-    const vpc = ec2.Vpc.fromLookup(this, 'SharedVpc', {
-      vpcName: SharedResources.vpcName(this),
-    });
-
-    // Resolved by CloudFormation at deploy time, so a re-created key is picked
-    // up without a fresh synth.
-    const encryptionKey = kms.Key.fromKeyArn(
-      this,
-      'SharedEncryptionKey',
-      ssm.StringParameter.valueForStringParameter(
-        this,
-        SharedResources.encryptionKeyArnParameter(this),
-      ),
-    );
+    const vpc = importSharedVpc(this);
 
     this.cluster = new dsql.CfnCluster(this, 'Cluster', {
-      kmsEncryptionKey: encryptionKey.keyArn,
       deletionProtectionEnabled: isProd,
       // Deny any connection that does not arrive from inside the shared VPC,
       // which closes the cluster's public endpoint.
@@ -91,7 +79,7 @@ export class DataStack extends cdk.Stack {
         this.cluster.attrVpcEndpointServiceName,
         DSQL_PORT,
       ),
-      subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      subnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
       privateDnsEnabled: true,
       securityGroups: [endpointSecurityGroup],
       open: false,

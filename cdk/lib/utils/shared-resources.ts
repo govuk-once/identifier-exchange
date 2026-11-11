@@ -8,12 +8,25 @@ import { ContextHelper } from './context-helper';
  * together.
  */
 export const SharedResources = {
-  /** `Name` tag on the shared VPC, used by `ec2.Vpc.fromLookup`. */
+  /** `Name` tag on the shared VPC. */
   vpcName: (scope: Construct): string => ContextHelper.get(scope, 'resourceName', 'vpc'),
 
-  /** SSM parameter holding the shared KMS key ARN, for `kms.Key.fromKeyArn`. */
-  encryptionKeyArnParameter: (scope: Construct): string =>
-    `/${ContextHelper.get(scope, 'prefix')}/kms/encryption-key-arn`,
+  // SSM parameters describing the shared VPC, read by `importSharedVpc`.
+  vpcIdParameter: (scope: Construct): string =>
+    `/${ContextHelper.get(scope, 'prefix')}/network/vpc-id`,
+  /** Comma-separated, one per AZ, in the same order as the AZ parameter. */
+  isolatedSubnetIdsParameter: (scope: Construct): string =>
+    `/${ContextHelper.get(scope, 'prefix')}/network/isolated-subnet-ids`,
+  availabilityZonesParameter: (scope: Construct): string =>
+    `/${ContextHelper.get(scope, 'prefix')}/network/availability-zones`,
+
+  // SSM parameters published by NetworkSecurityStack.
+  /** For `lambda.CodeSigningConfig.fromCodeSigningConfigArn`. */
+  codeSigningConfigArnParameter: (scope: Construct): string =>
+    `/${ContextHelper.get(scope, 'prefix')}/code-signing/config-arn`,
+  /** Signer profile the deployment pipeline signs Lambda packages with. */
+  signingProfileNameParameter: (scope: Construct): string =>
+    `/${ContextHelper.get(scope, 'prefix')}/code-signing/signing-profile-name`,
 
   /** SSM parameters published by DataStack. */
   dsqlClusterEndpointParameter: (scope: Construct): string =>

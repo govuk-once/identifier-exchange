@@ -5,54 +5,33 @@ import { Match, Template } from 'aws-cdk-lib/assertions';
 import { DSQL_PORT, DataStack } from './data.stack';
 import { ContextHelper } from '../utils/context-helper';
 import { GovUkOnceEnvironments } from '../constants/environment';
-
-// With no cached context, Vpc.fromLookup returns CDK's dummy VPC.
-const DUMMY_VPC_ID = 'vpc-12345';
+import { TEST_ENV, sharedSubnetIds, sharedVpcId } from '../testing/helpers';
 
 const synth = (environment = GovUkOnceEnvironments.Dev) => {
   const app = new cdk.App();
   ContextHelper.setAll(app, { environment, appName: 'identifier-exchange' });
-  const dataStack = new DataStack(app, 'TestDataStack', {
-    env: { account: '123456789012', region: 'eu-west-2' },
-  });
+  const dataStack = new DataStack(app, 'TestDataStack', { env: TEST_ENV });
   return { app, dataStack, template: Template.fromStack(dataStack) };
 };
 
-/** The CloudFormation parameter that resolves the key ARN from SSM. */
-const keyArnParameter = (template: Template) => {
-  const params = template.findParameters('*', {
-    Type: 'AWS::SSM::Parameter::Value<String>',
-    Default: '/dev-identifier-exchange/kms/encryption-key-arn',
-  });
-  const [id] = Object.keys(params);
-  expect(id).toBeDefined();
-  return id as string;
-};
-
 describe('Data Stack', () => {
-  test('creates one DSQL cluster encrypted with the shared KMS key', () => {
+  test('creates one DSQL cluster encrypted with the default AWS-owned key', () => {
     const { template } = synth();
 
     template.resourceCountIs('AWS::DSQL::Cluster', 1);
     template.hasResourceProperties('AWS::DSQL::Cluster', {
-      KmsEncryptionKey: { Ref: keyArnParameter(template) },
+      KmsEncryptionKey: Match.absent(),
     });
   });
 
-  test('references shared resources by lookup, not cross-stack exports', () => {
+  test('reads the shared VPC from SSM at deploy time, not by synth-time lookup or export', () => {
     const { app, template } = synth();
 
     expect(JSON.stringify(template.toJSON())).not.toContain('Fn::ImportValue');
-    // The VPC lookup is requested from the CDK CLI as missing context.
-    const missing = app.synth().manifest.missing ?? [];
-    expect(missing).toContainEqual(
-      expect.objectContaining({
-        provider: 'vpc-provider',
-        props: expect.objectContaining({
-          filter: { 'tag:Name': 'dev-identifier-exchange-vpc' },
-        }),
-      }),
-    );
+    // Synthesizes without asking the CDK CLI to look anything up in the account.
+    expect(app.synth().manifest.missing ?? []).toEqual([]);
+    sharedVpcId(template);
+    sharedSubnetIds(template);
   });
 
   test('publishes cluster details for DataMigratorStack and workloads', () => {
@@ -80,15 +59,16 @@ describe('Data Stack', () => {
 
     expect(policy).toContain('DenyConnectionsFromOutsideVpc');
     expect(policy).toContain('aws:SourceVpc');
-    expect(policy).toContain(DUMMY_VPC_ID);
+    expect(policy).toContain(JSON.stringify(sharedVpcId(template)));
   });
 
-  test('places the DSQL interface endpoint in the shared VPC', () => {
+  test('places the DSQL interface endpoint in the isolated subnets of the shared VPC', () => {
     const { template } = synth();
 
     template.hasResourceProperties('AWS::EC2::VPCEndpoint', {
       VpcEndpointType: 'Interface',
-      VpcId: DUMMY_VPC_ID,
+      VpcId: sharedVpcId(template),
+      SubnetIds: sharedSubnetIds(template),
       PrivateDnsEnabled: true,
       ServiceName: { 'Fn::GetAtt': [Match.stringLikeRegexp('^Cluster'), 'VpcEndpointServiceName'] },
     });

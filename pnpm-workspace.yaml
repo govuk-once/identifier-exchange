@@ -1,8 +1,8 @@
 packages:
   - '.'
 allowBuilds:
-  '@govuk-connect/dev': true
-  '@govuk-connect/dev@file:../platform-pkg-dev': true
+  "@govuk-connect/dev": true
+  "@govuk-connect/dev@file:../platform-pkg-dev": true
 minimumReleaseAgeExclude:
   - '@govuk-connect/dev'
 blockExoticSubdeps: true

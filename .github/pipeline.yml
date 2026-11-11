@@ -1,4 +1,9 @@
+# yaml-language-server: $schema=../../../schema/pipeline.schema.json
+
 application: Identifier Exchange
+
+node:
+  codeartifact: true # @govuk-connect packages
 
 pr:
   title:

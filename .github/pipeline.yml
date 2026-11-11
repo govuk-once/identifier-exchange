@@ -8,11 +8,12 @@ pr:
       IDX-456 fix(udp): handle empty payload
       IDX-789 feat!: drop legacy auth
 
-  # ephemeral:
-  #   environment: ephemeral # holds the dev account DEPLOYMENT_ROLE
-  #   env:
-  #     DEVELOPER_ID: "pr-{pr}"
-  #   deploy: pnpm run cdk:main
+  ephemeral:
+    environment: ephemeral # holds the dev account DEPLOYMENT_ROLE
+    env:
+      DEVELOPER_ID: 'pr-{pr}'
+    deploy: pnpm run cdk:main
+    destroy: pnpm run cdk:destroy:main
 
 # quality:
 #   aws: false # cdk synth for checkov

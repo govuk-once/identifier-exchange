@@ -41,7 +41,7 @@ export const listMigrations = (dir: string = MIGRATIONS_DIR): string[] =>
   readdirSync(dir)
     .filter((file) => MIGRATION_FILE.test(file))
     .map((file) => file.slice(0, -'.ts'.length))
-    .sort();
+    .toSorted();
 
 /**
  * Name for a new migration: the current UTC time, or one second after the
@@ -141,6 +141,7 @@ export const createMigration = (
   return file;
 };
 
+/* eslint-disable no-console -- CLI output */
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
     const file = createMigration(process.argv.slice(2).join(' '));

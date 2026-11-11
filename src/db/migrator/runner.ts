@@ -38,7 +38,7 @@ export class MigrationRunner {
     private readonly log: (message: string) => void = () => {},
   ) {
     const names = migrations.map((m) => m.name);
-    const sorted = [...names].sort();
+    const sorted = [...names].toSorted();
     if (names.some((name, i) => name !== sorted[i]) || new Set(names).size !== names.length) {
       throw new Error('Migrations must be unique and listed in name order');
     }
@@ -48,7 +48,7 @@ export class MigrationRunner {
   async run(request: MigrationRequest = {}): Promise<MigrationReport> {
     const action = request.action ?? 'up';
     if (!['up', 'down', 'status'].includes(action)) {
-      throw new Error(`Unknown action "${String(action)}". Use "up", "down" or "status".`);
+      throw new Error(`Unknown action "${action}". Use "up", "down" or "status".`);
     }
     await this.ensureTrackingTable();
 
@@ -104,7 +104,7 @@ export class MigrationRunner {
       throw new Error(`steps must be a positive integer, got ${steps}`);
     }
     const { applied } = await this.status();
-    const toRevert = applied.slice(-steps).reverse();
+    const toRevert = applied.slice(-steps).toReversed();
 
     for (const name of toRevert) {
       const migration = this.migrations.find((m) => m.name === name);

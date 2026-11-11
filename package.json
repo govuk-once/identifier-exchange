@@ -22,6 +22,7 @@
     "migration:create": "node src/db/migrator/create-migration.ts"
   },
   "dependencies": {
+    "@aws-lambda-powertools/logger": "^2.36.0",
     "@aws/aurora-dsql-drizzle": "0.2.0",
     "@govuk-connect/tag": "^1.0.0",
     "aws-cdk-lib": "2.265.0",

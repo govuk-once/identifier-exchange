@@ -54,8 +54,8 @@ export class DataMigratorStack extends cdk.Stack {
       { mutable: false },
     );
 
-    const workloadRole = (id: string, name: string, description: string) => {
-      const role = new iam.Role(this, id, {
+    const workloadRole = (roleId: string, name: string, description: string) => {
+      const role = new iam.Role(this, roleId, {
         roleName: ContextHelper.get(this, 'resourceName', name),
         description,
         assumedBy: new iam.CompositePrincipal(
@@ -134,7 +134,7 @@ export class DataMigratorStack extends cdk.Stack {
       executeAfter: [this.readOnlyRole, this.readWriteRole],
     });
 
-    for (const [id, parameterName, stringValue] of [
+    for (const [parameterId, parameterName, stringValue] of [
       [
         'ReadOnlyRoleArnParameter',
         SharedResources.dsqlReadOnlyRoleArnParameter(this),
@@ -151,7 +151,7 @@ export class DataMigratorStack extends cdk.Stack {
         this.migrator.functionName,
       ],
     ] as const) {
-      new ssm.StringParameter(this, id, { parameterName, stringValue });
+      new ssm.StringParameter(this, parameterId, { parameterName, stringValue });
     }
 
     new cdk.CfnOutput(this, 'MigratorFunctionArn', {

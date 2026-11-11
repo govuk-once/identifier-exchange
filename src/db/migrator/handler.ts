@@ -1,8 +1,11 @@
+import { Logger } from '@aws-lambda-powertools/logger';
 import { drizzle } from '@aws/aurora-dsql-drizzle';
 import { migrations } from '../migrations/index.js';
 import { dsqlExecutor } from './dsql-executor.js';
 import { MigrationRunner } from './runner.js';
 import type { MigrationReport, MigrationRequest } from './types.js';
+
+const logger = new Logger({ serviceName: 'data-migrator' });
 
 /**
  * Lambda entry point. Invoked with no payload by the deploy-time trigger
@@ -27,11 +30,13 @@ export const handler = async (event: MigrationRequest | null = {}): Promise<Migr
   // `SQL` type as distinct from the ESM one used here. They are the same
   // class at runtime (drizzle matches on entityKind, not identity).
   type DsqlQuery = Parameters<typeof db.execute>[0];
-  const executor = dsqlExecutor({ execute: (query) => db.execute(query) });
+  const executor = dsqlExecutor({
+    execute: (query) => db.execute(query as unknown as DsqlQuery),
+  });
   try {
-    const runner = new MigrationRunner(executor, migrations, console.log);
+    const runner = new MigrationRunner(executor, migrations, (message) => logger.info(message));
     const report = await runner.run(event ?? {});
-    console.log(JSON.stringify(report));
+    logger.info('Migrations finished', { report });
     return report;
   } finally {
     await db.$client.end();

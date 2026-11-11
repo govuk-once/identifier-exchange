@@ -26,7 +26,7 @@ export class FakeDb implements MigrationDb {
     if (/^\s*SELECT name, status FROM "schema_migrations"/.test(sql)) {
       return {
         rows: [...this.tracking.entries()]
-          .sort(([a], [b]) => a.localeCompare(b))
+          .toSorted(([a], [b]) => a.localeCompare(b))
           .map(([name, status]) => ({ name, status })),
       };
     }

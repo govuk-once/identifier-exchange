@@ -1,6 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import type { IConstruct } from 'constructs';
-import { DecoupledTagKeys } from '../constants/decoupled';
+import { DecoupledTagKeys } from '../constants/decoupled.ts';
 
 export const DecoupledStackHelper = {
   tagForBackup(scope: IConstruct, enabled = true): void {

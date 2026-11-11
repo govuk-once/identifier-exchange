@@ -1,8 +1,8 @@
 import * as cdk from 'aws-cdk-lib';
 import { describe, test } from 'vitest';
-
 import { Template } from 'aws-cdk-lib/assertions';
-import { TestingStack } from './testing.stack';
+
+import { TestingStack } from './testing.stack.js';
 
 describe('Testing Stack', () => {
   test('TestingStack synthesizes to a valid empty template', () => {

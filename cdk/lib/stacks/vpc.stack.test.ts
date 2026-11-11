@@ -1,8 +1,8 @@
 import * as cdk from 'aws-cdk-lib';
 import { describe, test } from 'vitest';
-
 import { Template } from 'aws-cdk-lib/assertions';
-import { VpcStack } from './vpc.stack';
+
+import { VpcStack } from './vpc.stack.js';
 
 describe('Vpc Stack', () => {
   test('VpcStack synthesizes to a valid empty template', () => {

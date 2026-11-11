@@ -1,10 +1,11 @@
 import type * as cdk from 'aws-cdk-lib';
 import type { Construct } from 'constructs';
-import { GovUkOnceEnvironments } from '../constants/environment';
+import { GDSEnv, type GDSEnvironment } from '@govuk-connect/dev';
 
 // 1. Define your strongly-typed context schema
 export interface AppContext {
-  environment: GovUkOnceEnvironments;
+  environment: GDSEnvironment;
+  account?: string;
   region?: string;
   appName?: string;
 }
@@ -24,22 +25,22 @@ export interface DerivedContextFns {
 
 const RESOURCE_ID_MAX_LENGTH = 40;
 
-const readContext = <K extends keyof AppContext>(
+function readContext<K extends keyof AppContext>(
   scope: Construct,
   key: K,
-  required: boolean,
-): AppContext[K] => {
+  required: boolean = true,
+): AppContext[K] | undefined {
   const value = scope.node.tryGetContext(key) as AppContext[K] | undefined;
 
   if (required && (value === undefined || value === null)) {
     throw new Error(`Missing required CDK context key: "${key}"`);
   }
 
-  return value as AppContext[K];
-};
+  return value;
+}
 
 const getPrefix = (scope: Construct): string => {
-  const environment = readContext(scope, 'environment', true).replace(/[^a-zA-Z0-9-]/g, '');
+  const environment = GDSEnv.get().replace(/[^a-zA-Z0-9-]/g, '') || '';
   const appName = readContext(scope, 'appName', true);
   return `${environment}-${appName}`.toLowerCase();
 };
@@ -61,7 +62,7 @@ const getResourceId = (scope: Construct, id?: string): string | undefined => {
 };
 
 const isProd = (scope: Construct): boolean =>
-  readContext(scope, 'environment', true) === GovUkOnceEnvironments.Prod;
+  readContext(scope, 'environment', true) === GDSEnv.PRODUCTION;
 
 const derived: { [K in keyof DerivedContext]: (scope: Construct) => DerivedContext[K] } = {
   isProd,

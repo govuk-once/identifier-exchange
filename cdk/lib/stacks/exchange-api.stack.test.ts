@@ -1,8 +1,8 @@
 import * as cdk from 'aws-cdk-lib';
 import { describe, test } from 'vitest';
-
 import { Template } from 'aws-cdk-lib/assertions';
-import { ExchangeApiStack } from './exchange-api.stack';
+
+import { ExchangeApiStack } from './exchange-api.stack.js';
 
 describe('Exchange Api Stack', () => {
   test('ExchangeApiStack synthesizes to a valid empty template', () => {

@@ -18,17 +18,23 @@
     "deploy:main": "npm run cdk:main -- deploy --all --require-approval never",
     "synth:decoupled": "npm run cdk:decoupled -- synth",
     "deploy:decoupled": "npm run cdk:decoupled -- deploy --all --require-approval never",
-    "test": "vitest ."
+    "test": "vitest .",
+    "migration:create": "node src/db/migrator/create-migration.ts"
   },
   "dependencies": {
+    "@aws/aurora-dsql-drizzle": "0.2.0",
     "@govuk-connect/tag": "^1.0.0",
     "aws-cdk-lib": "2.265.0",
-    "constructs": "10.8.1"
+    "constructs": "10.8.1",
+    "drizzle-orm": "0.45.4",
+    "pg": "8.23.1"
   },
   "devDependencies": {
     "@govuk-connect/dev": "0.0.10",
     "@types/node": "24.13.3",
+    "@types/pg": "8.23.1",
     "aws-cdk": "2.1136.0",
+    "esbuild": "0.28.2",
     "oxfmt": "0.63.0",
     "oxlint": "1.78.0",
     "oxlint-tsgolint": "7.0.2001",

@@ -7,6 +7,7 @@ import { GovUkOnceEnvironments } from '../lib/constants/environment';
 const app = new cdk.App();
 ContextHelper.setAll(app, {
   environment: (process.env.ENV as GovUkOnceEnvironments) || GovUkOnceEnvironments.Dev,
+  appName: 'identifier-exchange',
 });
 // Decoupled stacks process tagged resources or conditionally deploy
 new BackupStack(app, 'BackupStack');

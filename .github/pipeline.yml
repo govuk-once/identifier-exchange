@@ -17,8 +17,8 @@ pr:
     environment: ephemeral # holds the dev account DEPLOYMENT_ROLE
     env:
       DEVELOPER_ID: 'pr-{pr}'
-    deploy: pnpm run cdk:main
-    destroy: pnpm run cdk:destroy:main
+    deploy: pnpm run deploy:main
+    destroy: pnpm run destroy:main
 
 # quality:
 #   aws: false # cdk synth for checkov

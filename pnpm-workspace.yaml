@@ -3,7 +3,6 @@ packages:
 allowBuilds:
   "@govuk-connect/dev": true
   "@govuk-connect/dev@file:../platform-pkg-dev": true
-  esbuild: true
 minimumReleaseAgeExclude:
   - '@govuk-connect/dev'
 blockExoticSubdeps: true

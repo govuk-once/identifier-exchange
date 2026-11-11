@@ -8,7 +8,7 @@
   "type": "module",
   "sideEffects": false,
   "publishConfig": {
-    "registry": "https://registry-prod-904690835784.d.codeartifact.eu-west-2.amazonaws.com/npm/registry-prod-repo"
+    "registry": "https://registry-prod-540546997823.d.codeartifact.eu-west-2.amazonaws.com/npm/registry-prod-repo"
   },
   "scripts": {
     "postinstall": "chmod +x node_modules/@govuk-connect/dev/hooks/* 2>/dev/null || true",

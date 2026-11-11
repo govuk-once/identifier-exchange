@@ -6,7 +6,7 @@ import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Key } from 'aws-cdk-lib/aws-kms';
 import type { Construct } from 'constructs';
 
-export class MainStack extends Stack {
+export class SAMDSQLStack extends Stack {
   constructor(scope: Construct, id: string) {
     super(scope, id);
 
@@ -28,7 +28,7 @@ export class MainStack extends Stack {
       },
     });
 
-    fn.node.addMetadata('sam:source-entry', 'src/dsql/dsql.handler.ts');
+    fn.node.addMetadata('sam:source-entry', 'src/sam/dsql.handler.ts');
     // Applied to the local DSQL emulator by `dev sam:start`. TEXT rather than JSONB:
     // DSQL does not store json/jsonb columns.
     fn.node.addMetadata(

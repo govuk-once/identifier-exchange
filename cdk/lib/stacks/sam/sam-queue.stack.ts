@@ -5,7 +5,7 @@ import { Queue } from 'aws-cdk-lib/aws-sqs';
 import { LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
 import type { Construct } from 'constructs';
 
-export class MainStack extends Stack {
+export class SAMQueueStack extends Stack {
   constructor(scope: Construct, id: string) {
     super(scope, id);
 
@@ -22,7 +22,7 @@ export class MainStack extends Stack {
       },
     });
 
-    producer.node.addMetadata('sam:source-entry', 'src/queue/queue-producer.handler.ts');
+    producer.node.addMetadata('sam:source-entry', 'src/sam/queue-producer.handler.ts');
 
     queue.grantSendMessages(producer);
 
@@ -32,7 +32,7 @@ export class MainStack extends Stack {
       code: Code.fromInline('exports.handler = async () => ({})'),
     });
 
-    consumer.node.addMetadata('sam:source-entry', 'src/queue/queue-consumer.handler.ts');
+    consumer.node.addMetadata('sam:source-entry', 'src/sam/queue-consumer.handler.ts');
 
     consumer.addEventSource(new SqsEventSource(queue, { batchSize: 10 }));
 

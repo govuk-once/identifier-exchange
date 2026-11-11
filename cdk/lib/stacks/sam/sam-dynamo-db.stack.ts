@@ -5,7 +5,7 @@ import { LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { Key } from 'aws-cdk-lib/aws-kms';
 import type { Construct } from 'constructs';
 
-export class MainStack extends Stack {
+export class SAMDynamoDBStack extends Stack {
   constructor(scope: Construct, id: string) {
     super(scope, id);
 
@@ -27,7 +27,7 @@ export class MainStack extends Stack {
       },
     });
 
-    fn.node.addMetadata('sam:source-entry', 'src/dynamo/dynamo.handler.ts');
+    fn.node.addMetadata('sam:source-entry', 'src/sam/dynamo.handler.ts');
 
     table.grantReadWriteData(fn);
     key.grantEncryptDecrypt(fn);

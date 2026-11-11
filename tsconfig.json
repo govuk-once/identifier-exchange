@@ -1,8 +1,7 @@
 {
   "extends": "@govuk-connect/dev/tsconfig.base.json",
   "compilerOptions": {
-    "types": ["node", "vitest/globals"],
-    "allowImportingTsExtensions": true
+    "types": ["node", "vitest/globals"]
   },
   "include": ["src/**/*", "cdk/**/*", "packages/**/*"],
   "exclude": ["node_modules", "dist"]

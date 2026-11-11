@@ -1,7 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
-import type { DecoupledTagKeys } from '../constants/decoupled.ts';
+import type { DecoupledTagKeys } from '../constants/decoupled.js';
 
 export interface DecoupledResourceFinderProps {
   /** The tag key to filter by (e.g., 'Backup' or 'Monitor') */

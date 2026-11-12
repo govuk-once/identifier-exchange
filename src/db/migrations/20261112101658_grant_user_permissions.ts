@@ -18,20 +18,24 @@ const READ_ONLY_ROLE = 'read-only-db-role';
 
 export async function up(_db: MigrationDb): Promise<void> {
   await _db.execute(sql`CREATE ROLE ${READ_WRITE_ROLE} WITH LOGIN`);
-  await _db.execute(sql`AWS IAM GRANT ${READ_WRITE_ROLE} TO ${process.env.['READ_WRITE_ROLE_ARN']}`);
-  await _db.execute(sql`GRANT SELECT, INSERT, UPDATE, DELETE ON ${TABLE_NAME} TO ${READ_WRITE_ROLE}`);
+  await _db.execute(sql`AWS IAM GRANT ${READ_WRITE_ROLE} TO ${process.env.READ_WRITE_ROLE_ARN}`);
+  await _db.execute(
+    sql`GRANT SELECT, INSERT, UPDATE, DELETE ON ${TABLE_NAME} TO ${READ_WRITE_ROLE}`,
+  );
 
   await _db.execute(sql`CREATE ROLE ${READ_ONLY_ROLE} WITH LOGIN`);
-  await _db.execute(sql`AWS IAM GRANT ${READ_ONLY_ROLE} TO ${process.env.['READ_ONLY_ROLE_ARN']}`);
+  await _db.execute(sql`AWS IAM GRANT ${READ_ONLY_ROLE} TO ${process.env.READ_ONLY_ROLE_ARN}`);
   await _db.execute(sql`GRANT SELECT ON ${TABLE_NAME} TO ${READ_ONLY_ROLE}`);
 }
 
 export async function down(_db: MigrationDb): Promise<void> {
-  await _db.execute(sql`AWS IAM REVOKE ${READ_WRITE_ROLE} TO ${process.env.['READ_WRITE_ROLE_ARN']}`);
-  await _db.execute(sql`REVOKE SELECT, INSERT, UPDATE, DELETE ON ${TABLE_NAME} TO ${READ_WRITE_ROLE}`);
+  await _db.execute(sql`AWS IAM REVOKE ${READ_WRITE_ROLE} TO ${process.env.READ_WRITE_ROLE_ARN}`);
+  await _db.execute(
+    sql`REVOKE SELECT, INSERT, UPDATE, DELETE ON ${TABLE_NAME} TO ${READ_WRITE_ROLE}`,
+  );
   await _db.execute(sql`DROP ROLE ${READ_WRITE_ROLE}`);
 
-  await _db.execute(sql`AWS IAM REVOKE ${READ_ONLY_ROLE} TO ${process.env.['READ_ONLY_ROLE_ARN']}`);
+  await _db.execute(sql`AWS IAM REVOKE ${READ_ONLY_ROLE} TO ${process.env.READ_ONLY_ROLE_ARN}`);
 
   await _db.execute(sql`REVOKE SELECT ON ${TABLE_NAME} TO ${READ_ONLY_ROLE}`);
   await _db.execute(sql`DROP ROLE ${READ_ONLY_ROLE}`);

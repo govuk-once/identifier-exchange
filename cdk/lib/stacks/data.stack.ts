@@ -29,6 +29,12 @@ export const DSQL_PORT = 5432;
 export class DataStack extends cdk.Stack {
   public readonly cluster: dsql.CfnCluster;
   public readonly endpoint: ec2.InterfaceVpcEndpoint;
+  /**
+   * Hostname that resolves to the VPC endpoint. Workloads must connect with
+   * this, not `cluster.attrEndpoint`, which resolves to a public address that
+   * the isolated subnets cannot reach.
+   */
+  public readonly privateHostname: string;
   /** Attach to any workload that is allowed to connect to the database. */
   public readonly clientSecurityGroup: ec2.SecurityGroup;
 
@@ -71,6 +77,18 @@ export class DataStack extends cdk.Stack {
     });
     this.cluster.applyRemovalPolicy(isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY);
 
+    // PrivateLink hostname: <cluster-id>.<service-suffix>.<region>.on.aws,
+    // where the suffix is the last part of the endpoint service name
+    // (com.amazonaws.<region>.dsql-xxxx -> dsql-xxxx). Private DNS on the
+    // endpoint below resolves it to the endpoint's IPs. The DSQL connector
+    // parses the region from this form and signs the auth token for it.
+    this.privateHostname = cdk.Fn.join('.', [
+      this.cluster.attrIdentifier,
+      cdk.Fn.select(3, cdk.Fn.split('.', this.cluster.attrVpcEndpointServiceName)),
+      this.region,
+      'on.aws',
+    ]);
+
     this.clientSecurityGroup = new ec2.SecurityGroup(this, 'DsqlClientSecurityGroup', {
       vpc,
       securityGroupName: ContextHelper.get(this, 'resourceName', 'dsql-client'),
@@ -109,7 +127,7 @@ export class DataStack extends cdk.Stack {
       [
         'ClusterEndpointParameter',
         SharedResources.dsqlClusterEndpointParameter(this),
-        this.cluster.attrEndpoint,
+        this.privateHostname,
       ],
       [
         'ClusterArnParameter',

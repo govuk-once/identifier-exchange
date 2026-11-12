@@ -35,6 +35,7 @@ export const SharedResources = {
     `/${ContextHelper.get(scope, 'prefix')}/code-signing/signing-profile-name`,
 
   /** SSM parameters published by DataStack. */
+  /** PrivateLink hostname of the cluster; the public endpoint is unreachable from the VPC. */
   dsqlClusterEndpointParameter: (scope: Construct): string =>
     `/${ContextHelper.get(scope, 'prefix')}/dsql/cluster-endpoint`,
   dsqlClusterArnParameter: (scope: Construct): string =>

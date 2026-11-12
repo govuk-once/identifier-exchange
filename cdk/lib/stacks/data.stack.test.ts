@@ -41,7 +41,25 @@ describe('Data Stack', () => {
     });
 
     for (const [name, value] of [
-      ['/dev-identifier-exchange/dsql/cluster-endpoint', getAtt('Cluster', 'Endpoint')],
+      [
+        '/dev-identifier-exchange/dsql/cluster-endpoint',
+        {
+          'Fn::Join': [
+            '.',
+            [
+              getAtt('Cluster', 'Identifier'),
+              {
+                'Fn::Select': [
+                  3,
+                  { 'Fn::Split': ['.', getAtt('Cluster', 'VpcEndpointServiceName')] },
+                ],
+              },
+              'eu-west-2',
+              'on.aws',
+            ],
+          ],
+        },
+      ],
       ['/dev-identifier-exchange/dsql/cluster-arn', getAtt('Cluster', 'ResourceArn')],
       [
         '/dev-identifier-exchange/dsql/client-security-group-id',

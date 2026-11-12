@@ -9,13 +9,17 @@ import { SharedResources } from '../utils/shared-resources';
 import { importSharedVpc } from '../utils/shared-vpc';
 
 /**
- * IAM Identity Center (SSO) roles, i.e. people signed in to the console.
- * Outside prod they may connect from outside the VPC, so the DSQL console's
- * "Connect" works. They still need dsql:DbConnect(Admin) and kms:Decrypt on
- * the cluster key from their permission set.
+ * Roles people use in the console. Outside prod they may connect from
+ * outside the VPC, so the DSQL console's "Connect" works. This only lifts the
+ * VPC deny: they still need dsql:DbConnect(Admin), and kms:Decrypt on the
+ * cluster key, from their own IAM policies.
  */
-export const consoleUserRoles = (account: string) =>
-  `arn:aws:iam::${account}:role/aws-reserved/sso.amazonaws.com/*`;
+export const consoleUserRoles = (account: string) => [
+  // Personal admin roles assumed into the account, e.g. <firstname.lastname>-admin.
+  `arn:aws:iam::${account}:role/*-admin`,
+  // IAM Identity Center (SSO) permission sets.
+  `arn:aws:iam::${account}:role/aws-reserved/sso.amazonaws.com/*`,
+];
 
 /** PostgreSQL wire protocol port that the DSQL endpoint listens on. */
 export const DSQL_PORT = 5432;

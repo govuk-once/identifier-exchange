@@ -66,7 +66,8 @@ const getPrefix = (scope: Construct): string => {
       `developerId "${developerId}" must be lower-case letters, digits and hyphens (max 30), e.g. pr-123`,
     );
   }
-  return developerId;
+  const appName = readContext(scope, 'appName', true);
+  return `${developerId}-${appName}`.toLowerCase();
 };
 
 const getResourceName = (scope: Construct, name: string): string => {

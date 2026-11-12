@@ -1,4 +1,4 @@
-import * as cdk from 'aws-cdk-lib';
+mport * as cdk from 'aws-cdk-lib';
 import { describe, expect, test } from 'vitest';
 
 import { Match, Template } from 'aws-cdk-lib/assertions';
@@ -86,6 +86,7 @@ describe('Data Stack', () => {
     const policy = JSON.stringify(cluster?.Properties?.PolicyDocument);
 
     expect(policy).toContain('ArnNotLike');
+    expect(policy).toContain('arn:aws:iam::123456789012:role/*-admin');
     expect(policy).toContain('arn:aws:iam::123456789012:role/aws-reserved/sso.amazonaws.com/*');
   });
 
@@ -97,6 +98,7 @@ describe('Data Stack', () => {
     expect(policy).toContain('DenyConnectionsFromOutsideVpc');
     expect(policy).not.toContain('ArnNotLike');
     expect(policy).not.toContain('aws-reserved');
+    expect(policy).not.toContain('*-admin');
   });
 
   describe('isolated (PR) deployment', () => {

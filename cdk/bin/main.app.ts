@@ -4,6 +4,7 @@ import { NetworkSecurityStack } from '../lib/stacks/network-security.stack';
 import { DataStack } from '../lib/stacks/data.stack';
 // import { ExchangeApiStack } from '../lib/stacks/exchange-api.stack';
 import { GovUkOnceEnvironments } from '../lib/constants/environment';
+import { DataMigratorStack } from '../lib/stacks/data-migrator-stack';
 const app = new cdk.App();
 ContextHelper.setAll(app, {
   environment: (process.env.ENV as GovUkOnceEnvironments) || GovUkOnceEnvironments.Dev,
@@ -17,7 +18,9 @@ const env: cdk.Environment = {
 
 const network = new NetworkSecurityStack(app, 'VpcStack', { env });
 const data = new DataStack(app, 'DataStack', { env });
+const migrator = new DataMigratorStack(app, 'DataMigratorStack', { env });
 
 data.addStackDependency(network);
+migrator.addStackDependency(data);
 
 // new ExchangeApiStack(app, 'ExchangeApiStack', { env });

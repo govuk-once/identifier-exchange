@@ -21,6 +21,14 @@ const synth = () => {
 const CLUSTER_ARN = '/dev-identifier-exchange/dsql/cluster-arn';
 const CLUSTER_ENDPOINT = '/dev-identifier-exchange/dsql/cluster-endpoint';
 const CLIENT_SG = '/dev-identifier-exchange/dsql/client-security-group-id';
+const DSQL_KEY = '/dev-identifier-exchange/kms/dsql-encryption-key-arn';
+
+/** DSQL refuses connections unless the principal can decrypt with the cluster's key. */
+const decryptDsqlKey = (template: Template) => ({
+  Action: 'kms:Decrypt',
+  Effect: 'Allow',
+  Resource: ssmRef(template, DSQL_KEY),
+});
 
 const migratorFunction = (template: Template) => {
   const functions = template.findResources('AWS::Lambda::Function', {
@@ -73,7 +81,7 @@ describe('Data Migrator Stack', () => {
     });
   });
 
-  test('migrator can connect as admin to this cluster only', () => {
+  test('migrator can connect as admin to this cluster only, and decrypt with its key', () => {
     const { template } = synth();
     const { fn } = migratorFunction(template);
     const roleId = fn.Properties.Role['Fn::GetAtt'][0] as string;
@@ -87,6 +95,7 @@ describe('Data Migrator Stack', () => {
             Effect: 'Allow',
             Resource: ssmRef(template, CLUSTER_ARN),
           },
+          decryptDsqlKey(template),
         ],
       },
     });
@@ -95,27 +104,31 @@ describe('Data Migrator Stack', () => {
   test.each([
     ['ReadOnlyDbRole', 'dev-identifier-exchange-dsql-readonly'],
     ['ReadWriteDbRole', 'dev-identifier-exchange-dsql-readwrite'],
-  ])('%s can connect, but not as admin', (logicalPrefix, roleName) => {
-    const { template } = synth();
+  ])(
+    '%s can connect and decrypt with the cluster key, but not as admin',
+    (logicalPrefix, roleName) => {
+      const { template } = synth();
 
-    template.hasResourceProperties('AWS::IAM::Role', {
-      RoleName: roleName,
-      AssumeRolePolicyDocument: {
-        Statement: [
-          Match.objectLike({ Principal: { Service: 'lambda.amazonaws.com' } }),
-          Match.objectLike({ Principal: { Service: 'ecs-tasks.amazonaws.com' } }),
-        ],
-      },
-    });
-    template.hasResourceProperties('AWS::IAM::Policy', {
-      Roles: [{ Ref: Match.stringLikeRegexp(`^${logicalPrefix}`) }],
-      PolicyDocument: {
-        Statement: [
-          { Action: 'dsql:DbConnect', Effect: 'Allow', Resource: ssmRef(template, CLUSTER_ARN) },
-        ],
-      },
-    });
-  });
+      template.hasResourceProperties('AWS::IAM::Role', {
+        RoleName: roleName,
+        AssumeRolePolicyDocument: {
+          Statement: [
+            Match.objectLike({ Principal: { Service: 'lambda.amazonaws.com' } }),
+            Match.objectLike({ Principal: { Service: 'ecs-tasks.amazonaws.com' } }),
+          ],
+        },
+      });
+      template.hasResourceProperties('AWS::IAM::Policy', {
+        Roles: [{ Ref: Match.stringLikeRegexp(`^${logicalPrefix}`) }],
+        PolicyDocument: {
+          Statement: [
+            { Action: 'dsql:DbConnect', Effect: 'Allow', Resource: ssmRef(template, CLUSTER_ARN) },
+            decryptDsqlKey(template),
+          ],
+        },
+      });
+    },
+  );
 
   test('runs migrations on deploy whenever the migrator version changes', () => {
     const { template } = synth();

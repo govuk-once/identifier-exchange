@@ -2,6 +2,7 @@ import * as path from 'node:path';
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as kms from 'aws-cdk-lib/aws-kms';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as nodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as logs from 'aws-cdk-lib/aws-logs';
@@ -47,6 +48,13 @@ export class DataMigratorStack extends cdk.Stack {
       ssm.StringParameter.valueForStringParameter(this, parameterName);
     const clusterArn = lookup(SharedResources.dsqlClusterArnParameter(this));
     const clusterEndpoint = lookup(SharedResources.dsqlClusterEndpointParameter(this));
+    // The cluster is encrypted with a customer-managed key, so DSQL refuses a
+    // connection unless the connecting principal can also kms:Decrypt with it.
+    const dsqlEncryptionKey = kms.Key.fromKeyArn(
+      this,
+      'DsqlEncryptionKey',
+      lookup(SharedResources.dsqlEncryptionKeyArnParameter(this)),
+    );
     const dsqlClientSecurityGroup = ec2.SecurityGroup.fromSecurityGroupId(
       this,
       'DsqlClientSecurityGroup',
@@ -66,6 +74,7 @@ export class DataMigratorStack extends cdk.Stack {
       role.addToPolicy(
         new iam.PolicyStatement({ actions: ['dsql:DbConnect'], resources: [clusterArn] }),
       );
+      dsqlEncryptionKey.grantDecrypt(role);
       return role;
     };
     this.readOnlyRole = workloadRole(
@@ -124,6 +133,7 @@ export class DataMigratorStack extends cdk.Stack {
         resources: [clusterArn],
       }),
     );
+    dsqlEncryptionKey.grantDecrypt(this.migrator);
 
     // Re-runs whenever the function's code or configuration changes, which
     // includes every new migration file.

@@ -38,7 +38,39 @@ export const handler = async (event: MigrationRequest | null = {}): Promise<Migr
     const report = await runner.run(event ?? {});
     logger.info('Migrations finished', { report });
     return report;
+  } catch (error) {
+    // drizzle reports every failure as "Failed query: <sql>" and keeps the
+    // real error (connection, auth, SQL) on `cause`. The deploy-time trigger
+    // only shows the message, so put the whole chain in it.
+    logger.error('Migrations failed', { error });
+    throw new Error(describeErrorChain(error), { cause: error });
   } finally {
     await db.$client.end();
   }
+};
+
+/**
+ * One line per error in the `cause` chain, including the Postgres SQLSTATE
+ * and Node error code (e.g. ENOTFOUND, ETIMEDOUT) where present.
+ */
+export const describeErrorChain = (error: unknown): string => {
+  const lines: string[] = [];
+  const seen = new Set<unknown>();
+  for (let current: unknown = error; current && !seen.has(current);) {
+    seen.add(current);
+    if (current instanceof Error) {
+      const code = (current as { code?: unknown }).code;
+      const message = current.message.replace(/\s+/g, ' ').trim();
+      lines.push(`${current.name}${code ? ` [${String(code)}]` : ''}: ${message}`);
+      // Node reports a failed connect to several addresses as an AggregateError.
+      if (current instanceof AggregateError) {
+        lines.push(...current.errors.map((e: unknown) => `  - ${String(e)}`));
+      }
+      current = current.cause;
+    } else {
+      lines.push(String(current));
+      break;
+    }
+  }
+  return lines.map((line, i) => (i === 0 ? line : `caused by ${line}`)).join('\n');
 };

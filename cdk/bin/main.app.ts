@@ -45,11 +45,11 @@ const stackProps = (name: string): cdk.StackProps => ({
 // The network stack is shared by every deployment in the environment, so an
 // isolated deployment neither deploys nor (on PR cleanup) destroys it; it
 // reads the shared VPC and keys from SSM instead.
-const network = developerId ? undefined : new NetworkSecurityStack(app, 'VpcStack', { env });
+const network = new NetworkSecurityStack(app, 'VpcStack', { env });
 const data = new DataStack(app, 'DataStack', stackProps('data-stack'));
 const migrator = new DataMigratorStack(app, 'DataMigratorStack', stackProps('data-migrator-stack'));
 
-if (network) data.addStackDependency(network);
+data.addStackDependency(network);
 migrator.addStackDependency(data);
 
 // new ExchangeApiStack(app, 'ExchangeApiStack', stackProps('exchange-api-stack'));

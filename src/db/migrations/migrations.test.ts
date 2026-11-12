@@ -15,6 +15,13 @@ const MIGRATOR_ENV = {
   READ_ONLY_ROLE_ARN: 'arn:aws:iam::123456789012:role/dev-identifier-exchange-dsql-readonly',
 };
 
+/**
+ * DSQL rejects identity columns and sequences without CACHE 1 or >= 65536.
+ * Matches a CACHE clause and captures its value.
+ */
+const IDENTITY_OR_SEQUENCE = /\bAS IDENTITY\b|\bCREATE SEQUENCE\b/i;
+const CACHE = /\bCACHE\s+(\d+)/i;
+
 /** Only DML can take bind parameters; Postgres rejects $n anywhere in DDL. */
 const DML = /^\s*(SELECT|INSERT|UPDATE|DELETE)\b/i;
 
@@ -62,6 +69,16 @@ describe('migration files', () => {
 
       for (const statement of db.migrationStatements) {
         expect(statement.replace(/;\s*$/, ''), statement).not.toContain(';');
+      }
+    });
+
+    test(`${migration.name} gives identity columns and sequences a DSQL-supported CACHE`, async () => {
+      const db = new FakeDb();
+      await migration.up(db);
+
+      for (const statement of db.migrationStatements.filter((s) => IDENTITY_OR_SEQUENCE.test(s))) {
+        const cache = Number(CACHE.exec(statement)?.[1]);
+        expect(cache === 1 || cache >= 65536, `needs CACHE 1 or >= 65536: ${statement}`).toBe(true);
       }
     });
 

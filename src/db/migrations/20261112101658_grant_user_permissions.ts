@@ -13,6 +13,7 @@ import { TABLE_NAME } from './20261112100123_create_initial_tables.js';
 // - down() must undo up(), in reverse order.
 // - DDL cannot take bind parameters. A plain ${value} in sql`` becomes $1, so
 //   use sql.identifier() for names and a validated literal for IAM ARNs.
+// - Identity columns and sequences need an explicit CACHE of 1 or >= 65536.
 
 const table = sql.identifier(TABLE_NAME);
 

@@ -83,6 +83,9 @@ import type { MigrationDb } from '../migrator/types.js';
 //   migration again from the top.
 // - Create indexes with CREATE INDEX ASYNC; the executor waits for the job.
 // - down() must undo up(), in reverse order.
+// - DDL cannot take bind parameters: use sql.identifier() for names, not a
+//   plain \${value} (which becomes $1).
+// - Identity columns and sequences need an explicit CACHE of 1 or >= 65536.
 //
 // e.g. await db.execute(sql\`ALTER TABLE exchanges ADD COLUMN IF NOT EXISTS ...\`);
 

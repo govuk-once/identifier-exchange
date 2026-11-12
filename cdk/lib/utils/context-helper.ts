@@ -51,7 +51,7 @@ const readContext = <K extends keyof AppContext>(
 const DEVELOPER_ID = /^[a-z0-9][a-z0-9-]{0,29}$/;
 
 const getSharedPrefix = (scope: Construct): string => {
-  const environment = readContext(scope, 'environment', true).replace(/[^a-zA-Z0-9-]/g, '');
+  const environment = readContext(scope, 'environment', true);
   const appName = readContext(scope, 'appName', true);
   return `${environment}-${appName}`.toLowerCase();
 };

@@ -1,5 +1,5 @@
 import { readdirSync } from 'node:fs';
-import { describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { FakeDb } from '../migrator/testing.js';
 import { migrations } from './index.js';
 
@@ -9,9 +9,23 @@ const migrationFiles = readdirSync(import.meta.dirname).filter(
   (file) => file.endsWith('.ts') && file !== 'index.ts' && !file.endsWith('.test.ts'),
 );
 
+// What DataMigratorStack sets on the migrator Lambda.
+const MIGRATOR_ENV = {
+  READ_WRITE_ROLE_ARN: 'arn:aws:iam::123456789012:role/dev-identifier-exchange-dsql-readwrite',
+  READ_ONLY_ROLE_ARN: 'arn:aws:iam::123456789012:role/dev-identifier-exchange-dsql-readonly',
+};
+
+/** Only DML can take bind parameters; Postgres rejects $n anywhere in DDL. */
+const DML = /^\s*(SELECT|INSERT|UPDATE|DELETE)\b/i;
+
 // Per-file checks use plain loops rather than test.each, so they simply
 // register no tests while the migrations list is empty.
 describe('migration files', () => {
+  beforeEach(() => {
+    for (const [name, value] of Object.entries(MIGRATOR_ENV)) vi.stubEnv(name, value);
+    return () => vi.unstubAllEnvs();
+  });
+
   test('index.ts lists every migration file, in order', () => {
     expect(migrations.map((m) => `${m.name}.ts`)).toEqual(migrationFiles.toSorted());
   });
@@ -48,6 +62,16 @@ describe('migration files', () => {
 
       for (const statement of db.migrationStatements) {
         expect(statement.replace(/;\s*$/, ''), statement).not.toContain(';');
+      }
+    });
+
+    test(`${migration.name} passes no bind parameters to DDL`, async () => {
+      const db = new FakeDb();
+      await migration.up(db);
+      await migration.down(db);
+
+      for (const { sql, params } of db.statements) {
+        if (!DML.test(sql)) expect(params, sql).toEqual([]);
       }
     });
   }

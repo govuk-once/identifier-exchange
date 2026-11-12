@@ -1,3 +1,4 @@
+// cspell:words rolname
 import { sql } from 'drizzle-orm';
 import type { MigrationDb } from '../migrator/types.js';
 import { TABLE_NAME } from './20261112100123_create_initial_tables.js';
@@ -10,33 +11,71 @@ import { TABLE_NAME } from './20261112100123_create_initial_tables.js';
 //   migration again from the top.
 // - Create indexes with CREATE INDEX ASYNC; the executor waits for the job.
 // - down() must undo up(), in reverse order.
-//
-// e.g. await db.execute(sql`ALTER TABLE exchanges ADD COLUMN IF NOT EXISTS ...`);
+// - DDL cannot take bind parameters. A plain ${value} in sql`` becomes $1, so
+//   use sql.identifier() for names and a validated literal for IAM ARNs.
 
-const READ_WRITE_ROLE = 'read-write-db-role';
-const READ_ONLY_ROLE = 'read-only-db-role';
+const table = sql.identifier(TABLE_NAME);
 
-export async function up(_db: MigrationDb): Promise<void> {
-  await _db.execute(sql`CREATE ROLE ${READ_WRITE_ROLE} WITH LOGIN`);
-  await _db.execute(sql`AWS IAM GRANT ${READ_WRITE_ROLE} TO ${process.env.READ_WRITE_ROLE_ARN}`);
-  await _db.execute(
-    sql`GRANT SELECT, INSERT, UPDATE, DELETE ON ${TABLE_NAME} TO ${READ_WRITE_ROLE}`,
-  );
+/** Database roles; DataMigratorStack maps its IAM roles onto these. */
+const ROLES = [
+  {
+    name: 'readwrite_role',
+    arnEnvVar: 'READ_WRITE_ROLE_ARN',
+    privileges: sql.raw('SELECT, INSERT, UPDATE, DELETE'),
+  },
+  {
+    name: 'readonly_role',
+    arnEnvVar: 'READ_ONLY_ROLE_ARN',
+    privileges: sql.raw('SELECT'),
+  },
+] as const;
 
-  await _db.execute(sql`CREATE ROLE ${READ_ONLY_ROLE} WITH LOGIN`);
-  await _db.execute(sql`AWS IAM GRANT ${READ_ONLY_ROLE} TO ${process.env.READ_ONLY_ROLE_ARN}`);
-  await _db.execute(sql`GRANT SELECT ON ${TABLE_NAME} TO ${READ_ONLY_ROLE}`);
+// Strict enough that the ARN can be inlined as a literal: no quotes possible.
+const IAM_ROLE_ARN = /^arn:aws[a-z-]*:iam::\d{12}:role\/[\w+=,.@/-]+$/;
+
+/**
+ * The IAM role ARN from the migrator's environment (set by
+ * DataMigratorStack), as a SQL string literal. AWS IAM GRANT/REVOKE take the
+ * ARN as a literal, not a bind parameter.
+ */
+const roleArnLiteral = (envVar: string) => {
+  const arn = process.env[envVar];
+  if (!arn || !IAM_ROLE_ARN.test(arn)) {
+    throw new Error(`${envVar} must be set to an IAM role ARN, got "${arn ?? ''}"`);
+  }
+  return sql.raw(`'${arn}'`);
+};
+
+/** Postgres has no CREATE ROLE IF NOT EXISTS, and DSQL has no DO blocks. */
+const roleExists = async (db: MigrationDb, name: string) => {
+  const { rows } = await db.execute(sql`SELECT 1 FROM pg_roles WHERE rolname = ${name}`);
+  return rows.length > 0;
+};
+
+export async function up(db: MigrationDb): Promise<void> {
+  for (const { name, arnEnvVar, privileges } of ROLES) {
+    const role = sql.identifier(name);
+    // Read the ARN before changing anything, so a missing variable fails fast.
+    const arn = roleArnLiteral(arnEnvVar);
+
+    if (!(await roleExists(db, name))) {
+      await db.execute(sql`CREATE ROLE ${role} WITH LOGIN`);
+    }
+    await db.execute(sql`AWS IAM GRANT ${role} TO ${arn}`);
+    await db.execute(sql`GRANT ${privileges} ON ${table} TO ${role}`);
+  }
 }
 
-export async function down(_db: MigrationDb): Promise<void> {
-  await _db.execute(sql`AWS IAM REVOKE ${READ_WRITE_ROLE} TO ${process.env.READ_WRITE_ROLE_ARN}`);
-  await _db.execute(
-    sql`REVOKE SELECT, INSERT, UPDATE, DELETE ON ${TABLE_NAME} TO ${READ_WRITE_ROLE}`,
-  );
-  await _db.execute(sql`DROP ROLE ${READ_WRITE_ROLE}`);
+export async function down(db: MigrationDb): Promise<void> {
+  for (const { name, arnEnvVar, privileges } of ROLES.toReversed()) {
+    const role = sql.identifier(name);
+    const arn = roleArnLiteral(arnEnvVar);
 
-  await _db.execute(sql`AWS IAM REVOKE ${READ_ONLY_ROLE} TO ${process.env.READ_ONLY_ROLE_ARN}`);
-
-  await _db.execute(sql`REVOKE SELECT ON ${TABLE_NAME} TO ${READ_ONLY_ROLE}`);
-  await _db.execute(sql`DROP ROLE ${READ_ONLY_ROLE}`);
+    if (!(await roleExists(db, name))) {
+      continue;
+    }
+    await db.execute(sql`REVOKE ${privileges} ON ${table} FROM ${role}`);
+    await db.execute(sql`AWS IAM REVOKE ${role} FROM ${arn}`);
+    await db.execute(sql`DROP ROLE IF EXISTS ${role}`);
+  }
 }

@@ -6,33 +6,37 @@ import { ContextHelper } from './context-helper';
  * each other's resources by these names instead of passing constructs across
  * stack boundaries, so there are no CloudFormation exports to lock them
  * together.
+ *
+ * NetworkSecurityStack is shared by every deployment in an environment, so
+ * its outputs use `sharedPrefix`. Everything else uses `prefix`, which is the
+ * developer ID (e.g. `pr-123`) for an isolated deployment.
  */
 export const SharedResources = {
   /** `Name` tag on the shared VPC. */
-  vpcName: (scope: Construct): string => ContextHelper.get(scope, 'resourceName', 'vpc'),
+  vpcName: (scope: Construct): string => `${ContextHelper.get(scope, 'sharedPrefix')}-vpc`,
 
   // SSM parameters describing the shared VPC, read by `importSharedVpc`.
   vpcIdParameter: (scope: Construct): string =>
-    `/${ContextHelper.get(scope, 'prefix')}/network/vpc-id`,
+    `/${ContextHelper.get(scope, 'sharedPrefix')}/network/vpc-id`,
   /** Comma-separated, one per AZ, in the same order as the AZ parameter. */
   isolatedSubnetIdsParameter: (scope: Construct): string =>
-    `/${ContextHelper.get(scope, 'prefix')}/network/isolated-subnet-ids`,
+    `/${ContextHelper.get(scope, 'sharedPrefix')}/network/isolated-subnet-ids`,
   availabilityZonesParameter: (scope: Construct): string =>
-    `/${ContextHelper.get(scope, 'prefix')}/network/availability-zones`,
+    `/${ContextHelper.get(scope, 'sharedPrefix')}/network/availability-zones`,
 
   // SSM parameters published by NetworkSecurityStack.
   /** For `kms.Key.fromKeyArn`: encrypts the DSQL cluster at rest. */
   dsqlEncryptionKeyArnParameter: (scope: Construct): string =>
-    `/${ContextHelper.get(scope, 'prefix')}/kms/dsql-encryption-key-arn`,
+    `/${ContextHelper.get(scope, 'sharedPrefix')}/kms/dsql-encryption-key-arn`,
   /** For `kms.Key.fromKeyArn`: application-level field encryption. */
   dataEncryptionKeyArnParameter: (scope: Construct): string =>
-    `/${ContextHelper.get(scope, 'prefix')}/kms/data-encryption-key-arn`,
+    `/${ContextHelper.get(scope, 'sharedPrefix')}/kms/data-encryption-key-arn`,
   /** For `lambda.CodeSigningConfig.fromCodeSigningConfigArn`. */
   codeSigningConfigArnParameter: (scope: Construct): string =>
-    `/${ContextHelper.get(scope, 'prefix')}/code-signing/config-arn`,
+    `/${ContextHelper.get(scope, 'sharedPrefix')}/code-signing/config-arn`,
   /** Signer profile the deployment pipeline signs Lambda packages with. */
   signingProfileNameParameter: (scope: Construct): string =>
-    `/${ContextHelper.get(scope, 'prefix')}/code-signing/signing-profile-name`,
+    `/${ContextHelper.get(scope, 'sharedPrefix')}/code-signing/signing-profile-name`,
 
   /** SSM parameters published by DataStack. */
   /** PrivateLink hostname of the cluster; the public endpoint is unreachable from the VPC. */

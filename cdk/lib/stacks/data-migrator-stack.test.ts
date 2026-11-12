@@ -7,12 +7,13 @@ import { ContextHelper } from '../utils/context-helper';
 import { GovUkOnceEnvironments } from '../constants/environment';
 import { TEST_ENV, sharedSubnetIds, sharedVpcId, ssmRef } from '../testing/helpers';
 
-const synth = () => {
+const synth = (developerId?: string) => {
   // Skip esbuild bundling: these tests assert on the template, not the bundle.
   const app = new cdk.App({ context: { 'aws:cdk:bundling-stacks': [] } });
   ContextHelper.setAll(app, {
     environment: GovUkOnceEnvironments.Dev,
     appName: 'identifier-exchange',
+    developerId,
   });
   const stack = new DataMigratorStack(app, 'TestDataMigratorStack', { env: TEST_ENV });
   return { app, stack, template: Template.fromStack(stack) };
@@ -40,6 +41,24 @@ const migratorFunction = (template: Template) => {
 };
 
 describe('Data Migrator Stack', () => {
+  test('an isolated (PR) deployment names everything with the developer ID', () => {
+    const { template } = synth('pr-123');
+
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      FunctionName: 'pr-123-data-migrator',
+    });
+    template.hasResourceProperties('AWS::Logs::LogGroup', {
+      LogGroupName: '/aws/lambda/pr-123-data-migrator',
+    });
+    for (const roleName of ['pr-123-dsql-readonly', 'pr-123-dsql-readwrite']) {
+      template.hasResourceProperties('AWS::IAM::Role', { RoleName: roleName });
+    }
+    // Its own DataStack's outputs, but the environment's shared VPC and key.
+    ssmRef(template, '/pr-123/dsql/cluster-arn');
+    ssmRef(template, '/dev-identifier-exchange/kms/dsql-encryption-key-arn');
+    sharedVpcId(template);
+  });
+
   test('reads DataStack and NetworkSecurityStack outputs from SSM, not lookups or exports', () => {
     const { app, template } = synth();
 

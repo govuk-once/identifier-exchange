@@ -7,9 +7,9 @@ import { ContextHelper } from '../utils/context-helper';
 import { GovUkOnceEnvironments } from '../constants/environment';
 import { TEST_ENV, sharedSubnetIds, sharedVpcId, ssmRef } from '../testing/helpers';
 
-const synth = (environment = GovUkOnceEnvironments.Dev) => {
+const synth = (environment = GovUkOnceEnvironments.Dev, developerId?: string) => {
   const app = new cdk.App();
-  ContextHelper.setAll(app, { environment, appName: 'identifier-exchange' });
+  ContextHelper.setAll(app, { environment, appName: 'identifier-exchange', developerId });
   const dataStack = new DataStack(app, 'TestDataStack', { env: TEST_ENV });
   return { app, dataStack, template: Template.fromStack(dataStack) };
 };
@@ -78,6 +78,58 @@ describe('Data Stack', () => {
     expect(policy).toContain('DenyConnectionsFromOutsideVpc');
     expect(policy).toContain('aws:SourceVpc');
     expect(policy).toContain(JSON.stringify(sharedVpcId(template)));
+  });
+
+  test('lets console users connect from outside the VPC outside prod', () => {
+    const { template } = synth(GovUkOnceEnvironments.Dev);
+    const [cluster] = Object.values(template.findResources('AWS::DSQL::Cluster'));
+    const policy = JSON.stringify(cluster?.Properties?.PolicyDocument);
+
+    expect(policy).toContain('ArnNotLike');
+    expect(policy).toContain('arn:aws:iam::123456789012:role/aws-reserved/sso.amazonaws.com/*');
+  });
+
+  test('allows no exceptions to the VPC restriction in prod', () => {
+    const { template } = synth(GovUkOnceEnvironments.Prod);
+    const [cluster] = Object.values(template.findResources('AWS::DSQL::Cluster'));
+    const policy = JSON.stringify(cluster?.Properties?.PolicyDocument);
+
+    expect(policy).toContain('DenyConnectionsFromOutsideVpc');
+    expect(policy).not.toContain('ArnNotLike');
+    expect(policy).not.toContain('aws-reserved');
+  });
+
+  describe('isolated (PR) deployment', () => {
+    test('names its own resources and parameters with the developer ID', () => {
+      const { template } = synth(GovUkOnceEnvironments.Dev, 'pr-123');
+
+      template.hasResourceProperties('AWS::DSQL::Cluster', {
+        Tags: Match.arrayWith([{ Key: 'Name', Value: 'pr-123-dsql' }]),
+      });
+      for (const name of ['pr-123-dsql-client', 'pr-123-dsql-endpoint']) {
+        template.hasResourceProperties('AWS::EC2::SecurityGroup', { GroupName: name });
+      }
+      for (const name of [
+        '/pr-123/dsql/cluster-endpoint',
+        '/pr-123/dsql/cluster-arn',
+        '/pr-123/dsql/client-security-group-id',
+      ]) {
+        template.hasResourceProperties('AWS::SSM::Parameter', { Name: name });
+      }
+      expect(JSON.stringify(template.toJSON())).not.toContain('dev-identifier-exchange-dsql');
+    });
+
+    test('still reads the shared VPC and key from the environment', () => {
+      const { template } = synth(GovUkOnceEnvironments.Dev, 'pr-123');
+
+      sharedVpcId(template);
+      sharedSubnetIds(template);
+      ssmRef(template, '/dev-identifier-exchange/kms/dsql-encryption-key-arn');
+    });
+
+    test('rejects a developer ID that would make invalid resource names', () => {
+      expect(() => synth(GovUkOnceEnvironments.Dev, 'PR_123')).toThrow(/developerId "PR_123"/);
+    });
   });
 
   test('places the DSQL interface endpoint in the isolated subnets of the shared VPC', () => {

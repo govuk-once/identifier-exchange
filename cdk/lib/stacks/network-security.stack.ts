@@ -155,8 +155,8 @@ export class NetworkSecurityStack extends cdk.Stack {
   private createKey(id: string, name: string, purpose: string): kms.Key {
     const isProd = ContextHelper.get(this, 'isProd');
     return new kms.Key(this, id, {
-      alias: ContextHelper.get(this, 'resourceName', name),
-      description: `${purpose} - ${ContextHelper.get(this, 'prefix')}`,
+      alias: `${ContextHelper.get(this, 'sharedPrefix')}-${name}`,
+      description: `${purpose} - ${ContextHelper.get(this, 'sharedPrefix')}`,
       enableKeyRotation: true,
       rotationPeriod: KEY_ROTATION_PERIOD,
       pendingWindow: cdk.Duration.days(30),

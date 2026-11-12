@@ -8,6 +8,15 @@ import { ContextHelper } from '../utils/context-helper';
 import { SharedResources } from '../utils/shared-resources';
 import { importSharedVpc } from '../utils/shared-vpc';
 
+/**
+ * IAM Identity Center (SSO) roles, i.e. people signed in to the console.
+ * Outside prod they may connect from outside the VPC, so the DSQL console's
+ * "Connect" works. They still need dsql:DbConnect(Admin) and kms:Decrypt on
+ * the cluster key from their permission set.
+ */
+export const consoleUserRoles = (account: string) =>
+  `arn:aws:iam::${account}:role/aws-reserved/sso.amazonaws.com/*`;
+
 /** PostgreSQL wire protocol port that the DSQL endpoint listens on. */
 export const DSQL_PORT = 5432;
 
@@ -59,7 +68,8 @@ export class DataStack extends cdk.Stack {
       kmsEncryptionKey: encryptionKey.keyArn,
       deletionProtectionEnabled: isProd,
       // Deny any connection that does not arrive from inside the shared VPC,
-      // which closes the cluster's public endpoint.
+      // which closes the cluster's public endpoint. Outside prod, console
+      // users are exempt (conditions in one statement are ANDed).
       policyDocument: this.toJsonString({
         Version: '2012-10-17',
         Statement: [
@@ -69,7 +79,12 @@ export class DataStack extends cdk.Stack {
             Principal: { AWS: '*' },
             Action: ['dsql:DbConnect', 'dsql:DbConnectAdmin'],
             Resource: '*',
-            Condition: { StringNotEquals: { 'aws:SourceVpc': vpc.vpcId } },
+            Condition: {
+              StringNotEquals: { 'aws:SourceVpc': vpc.vpcId },
+              ...(!isProd && {
+                ArnNotLike: { 'aws:PrincipalArn': consoleUserRoles(this.account) },
+              }),
+            },
           },
         ],
       }),

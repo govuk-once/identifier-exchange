@@ -31,9 +31,9 @@ const getAtt = (prefix: string, attr: string) => ({
  */
 const endpoints = (template: Template) =>
   Object.values(template.findResources('AWS::EC2::VPCEndpoint')).map((r) => ({
-    type: r.Properties.VpcEndpointType as string,
-    service: JSON.stringify(r.Properties.ServiceName),
-    properties: r.Properties,
+    type: r['Properties'].VpcEndpointType as string,
+    service: JSON.stringify(r['Properties'].ServiceName),
+    properties: r['Properties'],
   }));
 
 describe('Network Security Stack', () => {
@@ -63,8 +63,8 @@ describe('Network Security Stack', () => {
 
       template.resourceCountIs('AWS::EC2::Subnet', MAX_AZS);
       for (const subnet of Object.values(template.findResources('AWS::EC2::Subnet'))) {
-        expect(subnet.Properties.MapPublicIpOnLaunch).toBe(false);
-        expect(subnet.Properties.Tags).toContainEqual({
+        expect(subnet['Properties'].MapPublicIpOnLaunch).toBe(false);
+        expect(subnet['Properties'].Tags).toContainEqual({
           Key: 'aws-cdk:subnet-type',
           Value: 'Isolated',
         });
@@ -200,7 +200,7 @@ describe('Network Security Stack', () => {
       });
       const [group] = Object.values(groups);
 
-      expect(group?.Properties.SecurityGroupIngress).toEqual([
+      expect(group?.['Properties'].SecurityGroupIngress).toEqual([
         expect.objectContaining({
           CidrIp: VPC_CIDR,
           IpProtocol: 'tcp',
@@ -209,7 +209,7 @@ describe('Network Security Stack', () => {
         }),
       ]);
       // allowAllOutbound: false leaves CDK's placeholder rule, which matches no traffic.
-      expect(group?.Properties.SecurityGroupEgress).toEqual([
+      expect(group?.['Properties'].SecurityGroupEgress).toEqual([
         expect.objectContaining({ CidrIp: '255.255.255.255/32' }),
       ]);
     });
@@ -318,8 +318,9 @@ describe('Network Security Stack', () => {
       const keys = template.findResources('AWS::KMS::Key');
       const policyFor = (prefix: string) =>
         JSON.stringify(
-          Object.entries(keys).find(([logicalId]) => logicalId.startsWith(prefix))?.[1]?.Properties
-            .KeyPolicy,
+          Object.entries(keys).find(([logicalId]) => logicalId.startsWith(prefix))?.[1]?.[
+            'Properties'
+          ].KeyPolicy,
         );
 
       expect(policyFor('DsqlEncryptionKey')).toContain('dsql.amazonaws.com');

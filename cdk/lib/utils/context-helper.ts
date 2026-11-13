@@ -13,7 +13,7 @@ export interface AppContext {
    * DEVELOPER_ID convention shared with user-data-platform). When set, it
    * replaces the prefix on everything except the shared network stack.
    */
-  developerId?: string;
+  developerId?: string | undefined;
 }
 
 // 2. Values derived from AppContext rather than stored in it

@@ -5,7 +5,7 @@ import { Match, Template } from 'aws-cdk-lib/assertions';
 import { DataMigratorStack } from './data-migrator-stack.js';
 import { ContextHelper } from '../utils/context-helper.js';
 import { GDSEnv } from '@govuk-connect/dev';
-import { TEST_ENV, sharedSubnetIds, sharedVpcId, ssmRef } from '../testing/helpers';
+import { TEST_ENV, sharedSubnetIds, sharedVpcId, ssmRef } from '../testing/helpers.js';
 
 const synth = (developerId?: string) => {
   // Skip esbuild bundling: these tests assert on the template, not the bundle.
@@ -78,7 +78,7 @@ describe('Data Migrator Stack', () => {
     const { template } = synth();
     const { fn } = migratorFunction(template);
 
-    expect(fn.Properties).toMatchObject({
+    expect(fn['Properties']).toMatchObject({
       Runtime: 'nodejs24.x',
       Architectures: ['arm64'],
       Handler: 'index.handler',
@@ -95,7 +95,7 @@ describe('Data Migrator Stack', () => {
     const { template } = synth();
     const { fn } = migratorFunction(template);
 
-    expect(fn.Properties.Environment.Variables).toEqual({
+    expect(fn['Properties'].Environment.Variables).toEqual({
       CLUSTER_ENDPOINT: ssmRef(template, CLUSTER_ENDPOINT),
       READ_ONLY_ROLE_ARN: { 'Fn::GetAtt': [expect.stringMatching(/^ReadOnlyDbRole/), 'Arn'] },
       READ_WRITE_ROLE_ARN: { 'Fn::GetAtt': [expect.stringMatching(/^ReadWriteDbRole/), 'Arn'] },
@@ -106,7 +106,7 @@ describe('Data Migrator Stack', () => {
   test('migrator can connect as admin to this cluster only, and decrypt with its key', () => {
     const { template } = synth();
     const { fn } = migratorFunction(template);
-    const roleId = fn.Properties.Role['Fn::GetAtt'][0] as string;
+    const roleId = fn['Properties'].Role['Fn::GetAtt'][0] as string;
 
     template.hasResourceProperties('AWS::IAM::Policy', {
       Roles: [{ Ref: roleId }],
@@ -156,12 +156,12 @@ describe('Data Migrator Stack', () => {
     const { template } = synth();
 
     const [trigger] = Object.values(template.findResources('Custom::Trigger'));
-    expect(trigger?.Properties).toMatchObject({
+    expect(trigger?.['Properties']).toMatchObject({
       HandlerArn: { Ref: expect.stringMatching(/^MigratorCurrentVersion/) },
       InvocationType: 'RequestResponse',
       Timeout: '600000',
     });
-    expect(trigger?.DependsOn).toEqual(
+    expect(trigger?.['DependsOn']).toEqual(
       expect.arrayContaining([
         expect.stringMatching(/^ReadOnlyDbRole/),
         expect.stringMatching(/^ReadWriteDbRole/),

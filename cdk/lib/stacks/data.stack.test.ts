@@ -76,7 +76,7 @@ describe('Data Stack', () => {
   test('denies cluster connections from outside the shared VPC', () => {
     const { template } = synth();
     const [cluster] = Object.values(template.findResources('AWS::DSQL::Cluster'));
-    const policy = JSON.stringify(cluster?.Properties?.PolicyDocument);
+    const policy = JSON.stringify(cluster?.['Properties']?.PolicyDocument);
 
     expect(policy).toContain('DenyConnectionsFromOutsideVpc');
     expect(policy).toContain('aws:SourceVpc');
@@ -86,7 +86,7 @@ describe('Data Stack', () => {
   test('lets console users connect from outside the VPC outside prod', () => {
     const { template } = synth(GDSEnv.DEVELOPMENT);
     const [cluster] = Object.values(template.findResources('AWS::DSQL::Cluster'));
-    const policy = JSON.stringify(cluster?.Properties?.PolicyDocument);
+    const policy = JSON.stringify(cluster?.['Properties']?.PolicyDocument);
 
     expect(policy).toContain('ArnNotLike');
     expect(policy).toContain('arn:aws:iam::123456789012:role/*-admin');
@@ -96,7 +96,7 @@ describe('Data Stack', () => {
   test('allows no exceptions to the VPC restriction in prod', () => {
     const { template } = synth(GDSEnv.PRODUCTION);
     const [cluster] = Object.values(template.findResources('AWS::DSQL::Cluster'));
-    const policy = JSON.stringify(cluster?.Properties?.PolicyDocument);
+    const policy = JSON.stringify(cluster?.['Properties']?.PolicyDocument);
 
     expect(policy).toContain('DenyConnectionsFromOutsideVpc');
     expect(policy).not.toContain('ArnNotLike');

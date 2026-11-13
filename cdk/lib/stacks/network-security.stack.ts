@@ -68,6 +68,15 @@ const ANY_IPV4 = '0.0.0.0/0';
  */
 export class NetworkSecurityStack extends cdk.Stack {
   public readonly vpc: ec2.Vpc;
+
+  /**
+   * `vpc` typed as IVpc. aws-cdk-lib's Vpc declares `vpnGatewayId` as
+   * `string | undefined`, which exactOptionalPropertyTypes won't assign to
+   * IVpc's `vpnGatewayId?: string`, so construct props need the cast.
+   */
+  private get vpcRef(): ec2.IVpc {
+    return this.vpc as ec2.IVpc;
+  }
   public readonly networkAcl: ec2.NetworkAcl;
   /** Guards every interface endpoint: HTTPS from inside the VPC only. */
   public readonly endpointSecurityGroup: ec2.SecurityGroup;
@@ -220,7 +229,7 @@ export class NetworkSecurityStack extends cdk.Stack {
    */
   private createZeroEgressNacl(): ec2.NetworkAcl {
     const nacl = new ec2.NetworkAcl(this, 'ZeroEgressNacl', {
-      vpc: this.vpc,
+      vpc: this.vpcRef,
       subnetSelection: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
     });
 
@@ -251,7 +260,7 @@ export class NetworkSecurityStack extends cdk.Stack {
     const subnets: ec2.SubnetSelection = { subnetType: ec2.SubnetType.PRIVATE_ISOLATED };
 
     const endpointSecurityGroup = new ec2.SecurityGroup(this, 'EndpointSecurityGroup', {
-      vpc: this.vpc,
+      vpc: this.vpcRef,
       description: 'AWS service interface endpoints - HTTPS from inside the VPC only',
       allowAllOutbound: false,
     });
@@ -302,7 +311,7 @@ export class NetworkSecurityStack extends cdk.Stack {
     }
 
     const securityGroup = new ec2.SecurityGroup(this, 'DsqlEndpointSecurityGroup', {
-      vpc: this.vpc,
+      vpc: this.vpcRef,
       description: 'Aurora DSQL data-plane endpoint - PostgreSQL from inside the VPC only',
       allowAllOutbound: false,
     });

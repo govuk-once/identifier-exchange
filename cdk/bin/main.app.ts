@@ -16,9 +16,9 @@ import { GDSEnv } from '@govuk-connect/dev';
  * jobs of the shared reusable workflow, which doesn't receive our `env:`.
  */
 const prNumber =
-  process.env.GITHUB_EVENT_NAME?.startsWith('pull_request') &&
-  /^refs\/pull\/(\d+)\//.exec(process.env.GITHUB_REF ?? '')?.[1];
-const developerId = process.env.DEVELOPER_ID || (prNumber ? `pr-${prNumber}` : undefined);
+  process.env['GITHUB_EVENT_NAME']?.startsWith('pull_request') &&
+  /^refs\/pull\/(\d+)\//.exec(process.env['GITHUB_REF'] ?? '')?.[1];
+const developerId = process.env['DEVELOPER_ID'] || (prNumber ? `pr-${prNumber}` : undefined);
 const environment = GDSEnv.get() || GDSEnv.DEVELOPMENT;
 
 const app = new cdk.App();
@@ -28,9 +28,11 @@ ContextHelper.setAll(app, {
   developerId,
 });
 
+const account = process.env['CDK_DEFAULT_ACCOUNT'];
+const region = process.env['AWS_DEFAULT_REGION'];
 const env: cdk.Environment = {
-  account: process.env.CDK_DEFAULT_ACCOUNT,
-  region: process.env.AWS_DEFAULT_REGION,
+  ...(account ? { account } : {}),
+  ...(region ? { region } : {}),
 };
 
 /**

@@ -80,6 +80,8 @@ repos:
         args:
           - --exclude-lines
           - '("detect-secrets":|["'']?TOP_SECRET["'']?\s*[:=]\s*["'']TOP_SECRET)'
+        additional_dependencies:
+          - pyyaml
 
   # Spell checker for code and documentation.
   - repo: https://github.com/streetsidesoftware/cspell-cli
@@ -88,6 +90,7 @@ repos:
       - id: cspell
         args: [--no-exit-code]
         verbose: true
+        language_version: system
         # Optional: uncomment to specify a custom config file path
         # args: [--config, .cspell.json]
 

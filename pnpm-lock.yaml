@@ -192,8 +192,8 @@ importers:
         specifier: 0.28.2
         version: 0.28.2
       '@govuk-connect/dev':
-        specifier: 0.0.10
-        version: 0.0.10(@types/node@24.13.3)(oxlint-tsgolint@7.0.2001)(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(yaml@2.9.0))
+        specifier: 0.0.13
+        version: 0.0.13(@types/node@24.13.3)(oxlint-tsgolint@7.0.2001)(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(yaml@2.9.0))
       '@types/node':
         specifier: 24.13.3
         version: 24.13.3
@@ -826,8 +826,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@govuk-connect/dev@0.0.10':
-    resolution: {integrity: sha512-ukqWhg7twD5yqo2KaUe13es5oYH6iNzR6JNmf5HaGbq2S0tgcTbhtKpR+3GUcdK6fWbsyhh/pSflRVTF+re0IQ==}
+  '@govuk-connect/dev@0.0.13':
+    resolution: {integrity: sha512-jIpL+dlbgbXwCPFObUjgw1U4GA96y91K53eMcZWHJBPQxd0G5lVYag4BMXLqfqhr+LWtV4FTwV8Wqdehx/uB6w==}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -2651,13 +2651,20 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
-  '@govuk-connect/dev@0.0.10(@types/node@24.13.3)(oxlint-tsgolint@7.0.2001)(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(yaml@2.9.0))':
+  '@govuk-connect/dev@0.0.13(@types/node@24.13.3)(oxlint-tsgolint@7.0.2001)(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(yaml@2.9.0))':
     dependencies:
+      '@aws-sdk/client-dynamodb': 3.1161.0
+      '@aws-sdk/client-kms': 3.1161.0
+      '@aws-sdk/client-sqs': 3.1161.0
+      '@aws-sdk/lib-dynamodb': 3.1161.0(@aws-sdk/client-dynamodb@3.1161.0)
+      '@esbuild/linux-x64': 0.28.2
       aws-cdk-lib: 2.265.0(constructs@10.8.1)
       constructs: 10.8.1
       cspell: 10.3.0
+      esbuild: 0.28.2
       oxfmt: 0.63.0
       oxlint: 1.78.0(oxlint-tsgolint@7.0.2001)
+      pg: 8.23.1
       typescript: 7.0.2
       vitest: 4.1.10(@types/node@24.13.3)(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(yaml@2.9.0))
       yaml: 2.9.0
@@ -2675,6 +2682,7 @@ snapshots:
       - jsdom
       - msw
       - oxlint-tsgolint
+      - pg-native
       - svelte
       - vite
       - vite-plus

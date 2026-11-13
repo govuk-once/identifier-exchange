@@ -1,4 +1,9 @@
+# yaml-language-server: $schema=../../../schema/pipeline.schema.json
+
 application: Identifier Exchange
+
+node:
+  codeartifact: true # @govuk-connect packages
 
 pr:
   title:
@@ -8,23 +13,26 @@ pr:
       IDX-456 fix(udp): handle empty payload
       IDX-789 feat!: drop legacy auth
 
-  # ephemeral:
-  #   environment: ephemeral # holds the dev account DEPLOYMENT_ROLE
-  #   env:
-  #     DEVELOPER_ID: "pr-{pr}"
-  #   deploy: pnpm run cdk:main
+  ephemeral:
+    environment: ephemeral # holds the dev account DEPLOYMENT_ROLE
+    env:
+      DEVELOPER_ID: 'pr-{pr}'
+    deploy: pnpm run deploy:main
+    destroy: pnpm run destroy:main
 
-# quality:
-#   aws: false # cdk synth for checkov
-#   nx: false
-#   environment: dev
-#   setup: python3 -m pip install semgrep pre-commit checkov
-#   checks:
-#     - name: Hygiene
-#       run: pre-commit run --all-files --show-diff-on-failure
-#   dependency-review: true
-#   conventional-commits: true
+quality:
+  aws: true # cdk synth for checkov
+  nx: false
+  environment: ephemeral
+  setup: python3 -m pip install semgrep pre-commit checkov
+  checks:
+    - name: Hygiene
+      run: pre-commit run --all-files --show-diff-on-failure
+    - name: Unit tests
+      run: pnpm test
+  dependency-review: true
+  conventional-commits: true
 
-# environments:
-#   - name: dev
-#     deploy: pnpm run cdk:main
+environments:
+  - name: development
+    deploy: pnpm run cdk:main

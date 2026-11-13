@@ -11,24 +11,32 @@
     "registry": "https://registry-prod-904690835784.d.codeartifact.eu-west-2.amazonaws.com/npm/registry-prod-repo"
   },
   "scripts": {
-    "cdk:main": "cdk --app 'npx ts-node --prefer-ts-exts bin/main.app.ts'",
-    "cdk:decoupled": "cdk --app 'npx ts-node --prefer-ts-exts bin/decoupled.app.ts'",
-    "cdk:app": "cdk --app 'npx ts-node --prefer-ts-exts'",
-    "synth:main": "pnpm cdk:main -- synth",
-    "deploy:main": "pnpm cdk:main -- deploy --all --require-approval never",
-    "synth:decoupled": "pnpm cdk:decoupled -- synth",
-    "deploy:decoupled": "pnpm cdk:decoupled -- deploy --all --require-approval never",
-    "test": "vitest ."
+    "postinstall": "chmod +x node_modules/@govuk-connect/dev/hooks/* 2>/dev/null || true",
+    "cdk:main": "cd cdk && cdk --app 'npx tsx bin/main.app.ts'",
+    "cdk:decoupled": "cd cdk &&  cdk --app 'npx tsx bin/decoupled.app.ts'",
+    "synth:main": "npm run cdk:main -- synth",
+    "deploy:main": "npm run cdk:main -- deploy --all --require-approval never",
+    "destroy:main": "npm run cdk:main -- destroy --all --force",
+    "synth:decoupled": "npm run cdk:decoupled -- synth",
+    "deploy:decoupled": "npm run cdk:decoupled -- deploy --all --require-approval never",
+    "destroy:decoupled": "npm run cdk:decoupled -- destroy --all --force",
+    "test": "vitest .",
+    "migration:create": "node src/db/migrator/create-migration.ts"
   },
   "dependencies": {
+    "@aws-lambda-powertools/logger": "^2.36.0",
+    "@aws/aurora-dsql-drizzle": "0.2.0",
     "@govuk-connect/tag": "^1.0.0",
     "aws-cdk-lib": "2.265.0",
-    "constructs": "10.8.1"
+    "constructs": "10.8.1",
+    "drizzle-orm": "0.45.4",
+    "pg": "8.23.1"
   },
   "devDependencies": {
     "@esbuild/linux-x64": "0.28.2",
     "@govuk-connect/dev": "0.0.13",
     "@types/node": "24.13.3",
+    "@types/pg": "8.23.1",
     "aws-cdk": "2.1136.0",
     "esbuild": "0.28.2",
     "oxfmt": "0.63.0",

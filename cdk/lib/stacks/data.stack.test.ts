@@ -1,16 +1,198 @@
 import * as cdk from 'aws-cdk-lib';
-import { describe, test } from 'vitest';
-import { Template } from 'aws-cdk-lib/assertions';
+import { describe, expect, test } from 'vitest';
 
-import { DataStack } from './data.stack.js';
+import { Match, Template } from 'aws-cdk-lib/assertions';
+import { DSQL_PORT, DataStack } from './data.stack';
+import { ContextHelper } from '../utils/context-helper';
+import { TEST_ENV, sharedSubnetIds, sharedVpcId, ssmRef } from '../testing/helpers';
+import { GDSEnv } from '@govuk-connect/dev';
+
+const synth = (environment: GDSEnv = GDSEnv.DEVELOPMENT, developerId?: string) => {
+  const app = new cdk.App();
+  ContextHelper.setAll(app, { environment, appName: 'identifier-exchange', developerId });
+  const dataStack = new DataStack(app, 'TestDataStack', { env: TEST_ENV });
+  return { app, dataStack, template: Template.fromStack(dataStack) };
+};
 
 describe('Data Stack', () => {
-  test('DataStack synthesizes to a valid empty template', () => {
-    const app = new cdk.App();
-    const stack = new DataStack(app, 'TestBackupStack');
-    const template = Template.fromStack(stack);
+  test('creates one DSQL cluster encrypted with the shared customer-managed key', () => {
+    const { template } = synth();
 
-    // Verify no resources are defined in placeholder state
-    template.templateMatches({});
+    template.resourceCountIs('AWS::DSQL::Cluster', 1);
+    template.hasResourceProperties('AWS::DSQL::Cluster', {
+      KmsEncryptionKey: ssmRef(template, '/dev-identifier-exchange/kms/dsql-encryption-key-arn'),
+    });
+  });
+
+  test('reads the shared VPC from SSM at deploy time, not by synth-time lookup or export', () => {
+    const { app, template } = synth();
+
+    expect(JSON.stringify(template.toJSON())).not.toContain('Fn::ImportValue');
+    // Synthesizes without asking the CDK CLI to look anything up in the account.
+    expect(app.synth().manifest.missing ?? []).toEqual([]);
+    sharedVpcId(template);
+    sharedSubnetIds(template);
+  });
+
+  test('publishes cluster details for DataMigratorStack and workloads', () => {
+    const { template } = synth();
+    const getAtt = (prefix: string, attr: string) => ({
+      'Fn::GetAtt': [Match.stringLikeRegexp(`^${prefix}`), attr],
+    });
+
+    for (const [name, value] of [
+      [
+        '/dev-identifier-exchange/dsql/cluster-endpoint',
+        {
+          'Fn::Join': [
+            '.',
+            [
+              getAtt('Cluster', 'Identifier'),
+              {
+                'Fn::Select': [
+                  3,
+                  { 'Fn::Split': ['.', getAtt('Cluster', 'VpcEndpointServiceName')] },
+                ],
+              },
+              // CDK folds the adjacent literals (region, 'on.aws') into one.
+              'eu-west-2.on.aws',
+            ],
+          ],
+        },
+      ],
+      ['/dev-identifier-exchange/dsql/cluster-arn', getAtt('Cluster', 'ResourceArn')],
+      [
+        '/dev-identifier-exchange/dsql/client-security-group-id',
+        getAtt('DsqlClientSecurityGroup', 'GroupId'),
+      ],
+    ] as const) {
+      template.hasResourceProperties('AWS::SSM::Parameter', { Name: name, Value: value });
+    }
+  });
+
+  test('denies cluster connections from outside the shared VPC', () => {
+    const { template } = synth();
+    const [cluster] = Object.values(template.findResources('AWS::DSQL::Cluster'));
+    const policy = JSON.stringify(cluster?.Properties?.PolicyDocument);
+
+    expect(policy).toContain('DenyConnectionsFromOutsideVpc');
+    expect(policy).toContain('aws:SourceVpc');
+    expect(policy).toContain(JSON.stringify(sharedVpcId(template)));
+  });
+
+  test('lets console users connect from outside the VPC outside prod', () => {
+    const { template } = synth(GDSEnv.DEVELOPMENT);
+    const [cluster] = Object.values(template.findResources('AWS::DSQL::Cluster'));
+    const policy = JSON.stringify(cluster?.Properties?.PolicyDocument);
+
+    expect(policy).toContain('ArnNotLike');
+    expect(policy).toContain('arn:aws:iam::123456789012:role/*-admin');
+    expect(policy).toContain('arn:aws:iam::123456789012:role/aws-reserved/sso.amazonaws.com/*');
+  });
+
+  test('allows no exceptions to the VPC restriction in prod', () => {
+    const { template } = synth(GDSEnv.PRODUCTION);
+    const [cluster] = Object.values(template.findResources('AWS::DSQL::Cluster'));
+    const policy = JSON.stringify(cluster?.Properties?.PolicyDocument);
+
+    expect(policy).toContain('DenyConnectionsFromOutsideVpc');
+    expect(policy).not.toContain('ArnNotLike');
+    expect(policy).not.toContain('aws-reserved');
+    expect(policy).not.toContain('*-admin');
+  });
+
+  describe('isolated (PR) deployment', () => {
+    test('names its own resources and parameters with the developer ID', () => {
+      const { template } = synth(GDSEnv.DEVELOPMENT, 'pr-123');
+
+      template.hasResourceProperties('AWS::DSQL::Cluster', {
+        Tags: Match.arrayWith([{ Key: 'Name', Value: 'pr-123-identifier-exchange-dsql' }]),
+      });
+      template.hasResourceProperties('AWS::EC2::SecurityGroup', {
+        GroupName: 'pr-123-identifier-exchange-dsql-client',
+      });
+      for (const name of [
+        '/pr-123-identifier-exchange/dsql/cluster-endpoint',
+        '/pr-123-identifier-exchange/dsql/cluster-arn',
+        '/pr-123-identifier-exchange/dsql/client-security-group-id',
+      ]) {
+        template.hasResourceProperties('AWS::SSM::Parameter', { Name: name });
+      }
+      expect(JSON.stringify(template.toJSON())).not.toContain('dev-identifier-exchange-dsql');
+    });
+
+    test('still reads the shared VPC and key from the environment', () => {
+      const { template } = synth(GDSEnv.DEVELOPMENT, 'pr-123');
+
+      sharedVpcId(template);
+      sharedSubnetIds(template);
+      ssmRef(template, '/dev-identifier-exchange/kms/dsql-encryption-key-arn');
+      ssmRef(template, '/dev-identifier-exchange/dsql/endpoint-security-group-id');
+    });
+
+    test('two PR deployments can share the VPC (no per-cluster endpoint)', () => {
+      const { template } = synth(GDSEnv.DEVELOPMENT, 'pr-123');
+
+      template.resourceCountIs('AWS::EC2::VPCEndpoint', 0);
+    });
+
+    test('rejects a developer ID that would make invalid resource names', () => {
+      expect(() => synth(GDSEnv.DEVELOPMENT, 'PR_123')).toThrow(/developerId "PR_123"/);
+    });
+  });
+
+  test('uses the shared DSQL endpoint instead of creating its own', () => {
+    const { template } = synth();
+
+    // A VPC allows only one DSQL endpoint with private DNS, so it lives in
+    // NetworkSecurityStack and every cluster shares it.
+    template.resourceCountIs('AWS::EC2::VPCEndpoint', 0);
+  });
+
+  test('DSQL clients may reach only the shared endpoint, on the DSQL port', () => {
+    const { template } = synth();
+
+    template.resourceCountIs('AWS::EC2::SecurityGroup', 1);
+    template.hasResourceProperties('AWS::EC2::SecurityGroup', {
+      GroupName: 'dev-identifier-exchange-dsql-client',
+      VpcId: sharedVpcId(template),
+      SecurityGroupEgress: [
+        Match.objectLike({
+          IpProtocol: 'tcp',
+          FromPort: DSQL_PORT,
+          ToPort: DSQL_PORT,
+          DestinationSecurityGroupId: ssmRef(
+            template,
+            '/dev-identifier-exchange/dsql/endpoint-security-group-id',
+          ),
+        }),
+      ],
+    });
+    template.resourceCountIs('AWS::EC2::SecurityGroupIngress', 0);
+  });
+
+  test('runs no Lambda-backed resources (migrations live in DataMigratorStack)', () => {
+    const { template } = synth();
+
+    template.resourceCountIs('AWS::Lambda::Function', 0);
+    template.resourceCountIs('Custom::AWS', 0);
+  });
+
+  test('non-prod cluster is disposable', () => {
+    const { template } = synth(GDSEnv.DEVELOPMENT);
+
+    template.hasResource('AWS::DSQL::Cluster', {
+      DeletionPolicy: 'Delete',
+      Properties: Match.objectLike({ DeletionProtectionEnabled: false }),
+    });
+  });
+
+  test('prod cluster is protected and retained', () => {
+    const { template } = synth(GDSEnv.PRODUCTION);
+
+    template.hasResource('AWS::DSQL::Cluster', {
+      DeletionPolicy: 'Retain',
+      Properties: Match.objectLike({ DeletionProtectionEnabled: true }),
+    });
   });
 });

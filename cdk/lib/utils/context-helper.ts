@@ -8,13 +8,22 @@ export interface AppContext {
   account?: string;
   region?: string;
   appName?: string;
+  /**
+   * Isolates a deployment, e.g. `pr-123` for a pull request (the
+   * DEVELOPER_ID convention shared with user-data-platform). When set, it
+   * replaces the prefix on everything except the shared network stack.
+   */
+  developerId?: string;
 }
 
 // 2. Values derived from AppContext rather than stored in it
 export interface DerivedContext {
   isProd: boolean;
   isNotProd: boolean;
+  /** `pr-123` for an isolated deployment, otherwise `dev-identifier-exchange`. */
   prefix: string;
+  /** Always `<environment>-<appName>`: names in the shared NetworkSecurityStack. */
+  sharedPrefix: string;
 }
 
 // 3. Derived values that need an argument to resolve
@@ -39,10 +48,30 @@ function readContext<K extends keyof AppContext>(
   return value;
 }
 
-const getPrefix = (scope: Construct): string => {
-  const environment = GDSEnv.get().replace(/[^a-zA-Z0-9-]/g, '') || '';
+/**
+ * Short enough that `<id>-<appName>-dsql-readwrite` (the longest name, an IAM
+ * role) stays inside IAM's 64-character limit.
+ */
+const DEVELOPER_ID = /^[a-z0-9][a-z0-9-]{0,19}$/;
+
+const getSharedPrefix = (scope: Construct): string => {
+  const environment = readContext(scope, 'environment', true);
   const appName = readContext(scope, 'appName', true);
   return `${environment}-${appName}`.toLowerCase();
+};
+
+const getPrefix = (scope: Construct): string => {
+  const developerId = readContext(scope, 'developerId', false);
+  if (!developerId) {
+    return getSharedPrefix(scope);
+  }
+  if (!DEVELOPER_ID.test(developerId)) {
+    throw new Error(
+      `developerId "${developerId}" must be lower-case letters, digits and hyphens (max 20), e.g. pr-123`,
+    );
+  }
+  const appName = readContext(scope, 'appName', true);
+  return `${developerId}-${appName}`.toLowerCase();
 };
 
 const getResourceName = (scope: Construct, name: string): string => {
@@ -68,6 +97,7 @@ const derived: { [K in keyof DerivedContext]: (scope: Construct) => DerivedConte
   isProd,
   isNotProd: (scope) => !isProd(scope),
   prefix: getPrefix,
+  sharedPrefix: getSharedPrefix,
 };
 
 // 4. Create the helper module
@@ -95,7 +125,8 @@ export const ContextHelper = {
    *
    *   ContextHelper.get(this, 'environment')
    *   ContextHelper.get(this, 'isProd')
-   *   ContextHelper.get(this, 'prefix')                  // "dev-identifier-exchange"
+   *   ContextHelper.get(this, 'prefix')                  // "dev-identifier-exchange", or "pr-123"
+   *   ContextHelper.get(this, 'sharedPrefix')            // always "dev-identifier-exchange"
    *   ContextHelper.get(this, 'resourceName', 'table')   // "dev-identifier-exchange-table"
    *   ContextHelper.get(this, 'resourceId', 'Table')     // lower-cased, max 40 chars
    *
@@ -125,6 +156,7 @@ function getContext(
     case 'isProd':
     case 'isNotProd':
     case 'prefix':
+    case 'sharedPrefix':
       return derived[key](scope);
     default:
       return readContext(scope, key, (arg as boolean | undefined) ?? true);

@@ -4,14 +4,14 @@ import { describe, expect, test } from 'vitest';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { DataMigratorStack } from './data-migrator-stack';
 import { ContextHelper } from '../utils/context-helper';
-import { GovUkOnceEnvironments } from '../constants/environment';
+import { GDSEnv, type GDSEnvironment } from '@govuk-connect/dev';
 import { TEST_ENV, sharedSubnetIds, sharedVpcId, ssmRef } from '../testing/helpers';
 
 const synth = (developerId?: string) => {
   // Skip esbuild bundling: these tests assert on the template, not the bundle.
   const app = new cdk.App({ context: { 'aws:cdk:bundling-stacks': [] } });
   ContextHelper.setAll(app, {
-    environment: GovUkOnceEnvironments.Dev,
+    environment: GDSEnv.DEVELOPMENT,
     appName: 'identifier-exchange',
     developerId,
   });
@@ -19,10 +19,10 @@ const synth = (developerId?: string) => {
   return { app, stack, template: Template.fromStack(stack) };
 };
 
-const CLUSTER_ARN = '/dev-identifier-exchange/dsql/cluster-arn';
-const CLUSTER_ENDPOINT = '/dev-identifier-exchange/dsql/cluster-endpoint';
-const CLIENT_SG = '/dev-identifier-exchange/dsql/client-security-group-id';
-const DSQL_KEY = '/dev-identifier-exchange/kms/dsql-encryption-key-arn';
+const CLUSTER_ARN = '/development-identifier-exchange/dsql/cluster-arn';
+const CLUSTER_ENDPOINT = '/development-identifier-exchange/dsql/cluster-endpoint';
+const CLIENT_SG = '/development-identifier-exchange/dsql/client-security-group-id';
+const DSQL_KEY = '/development-identifier-exchange/kms/dsql-encryption-key-arn';
 
 /** DSQL refuses connections unless the principal can decrypt with the cluster's key. */
 const decryptDsqlKey = (template: Template) => ({
@@ -33,7 +33,7 @@ const decryptDsqlKey = (template: Template) => ({
 
 const migratorFunction = (template: Template) => {
   const functions = template.findResources('AWS::Lambda::Function', {
-    Properties: { FunctionName: 'dev-identifier-exchange-data-migrator' },
+    Properties: { FunctionName: 'development-identifier-exchange-data-migrator' },
   });
   const [id, fn] = Object.entries(functions)[0] ?? [];
   expect(id).toBeDefined();
@@ -58,7 +58,7 @@ describe('Data Migrator Stack', () => {
     }
     // Its own DataStack's outputs, but the environment's shared VPC and key.
     ssmRef(template, '/pr-123-identifier-exchange/dsql/cluster-arn');
-    ssmRef(template, '/dev-identifier-exchange/kms/dsql-encryption-key-arn');
+    ssmRef(template, '/development-identifier-exchange/kms/dsql-encryption-key-arn');
     sharedVpcId(template);
   });
 
@@ -124,8 +124,8 @@ describe('Data Migrator Stack', () => {
   });
 
   test.each([
-    ['ReadOnlyDbRole', 'dev-identifier-exchange-dsql-readonly'],
-    ['ReadWriteDbRole', 'dev-identifier-exchange-dsql-readwrite'],
+    ['ReadOnlyDbRole', 'development-identifier-exchange-dsql-readonly'],
+    ['ReadWriteDbRole', 'development-identifier-exchange-dsql-readwrite'],
   ])(
     '%s can connect and decrypt with the cluster key, but not as admin',
     (logicalPrefix, roleName) => {
@@ -176,7 +176,7 @@ describe('Data Migrator Stack', () => {
     template.hasOutput('MigratorFunctionArn', { Value: { 'Fn::GetAtt': [id, 'Arn'] } });
     template.hasOutput('MigratorFunctionName', { Value: { Ref: id } });
     template.hasResourceProperties('AWS::SSM::Parameter', {
-      Name: '/dev-identifier-exchange/data-migrator/function-name',
+      Name: '/development-identifier-exchange/data-migrator/function-name',
       Value: { Ref: id },
     });
   });
@@ -185,8 +185,8 @@ describe('Data Migrator Stack', () => {
     const { template } = synth();
 
     for (const [name, prefix] of [
-      ['/dev-identifier-exchange/dsql/read-only-role-arn', 'ReadOnlyDbRole'],
-      ['/dev-identifier-exchange/dsql/read-write-role-arn', 'ReadWriteDbRole'],
+      ['/development-identifier-exchange/dsql/read-only-role-arn', 'ReadOnlyDbRole'],
+      ['/development-identifier-exchange/dsql/read-write-role-arn', 'ReadWriteDbRole'],
     ] as const) {
       template.hasResourceProperties('AWS::SSM::Parameter', {
         Name: name,

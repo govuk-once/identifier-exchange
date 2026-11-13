@@ -20,7 +20,7 @@ export interface AppContext {
 export interface DerivedContext {
   isProd: boolean;
   isNotProd: boolean;
-  /** `pr-123` for an isolated deployment, otherwise `dev-identifier-exchange`. */
+  /** `pr-123` for an isolated deployment, otherwise `development-identifier-exchange`. */
   prefix: string;
   /** Always `<environment>-<appName>`: names in the shared NetworkSecurityStack. */
   sharedPrefix: string;
@@ -55,7 +55,9 @@ function readContext<K extends keyof AppContext>(
 const DEVELOPER_ID = /^[a-z0-9][a-z0-9-]{0,19}$/;
 
 const getSharedPrefix = (scope: Construct): string => {
-  const environment = readContext(scope, 'environment', true);
+  // From context, not GDSEnv.get(), so a stack synthesized for production
+  // (e.g. in a test) gets production names whatever the shell's ENV is.
+  const environment = String(readContext(scope, 'environment', true)).replace(/[^a-zA-Z0-9-]/g, '');
   const appName = readContext(scope, 'appName', true);
   return `${environment}-${appName}`.toLowerCase();
 };
@@ -125,9 +127,9 @@ export const ContextHelper = {
    *
    *   ContextHelper.get(this, 'environment')
    *   ContextHelper.get(this, 'isProd')
-   *   ContextHelper.get(this, 'prefix')                  // "dev-identifier-exchange", or "pr-123"
-   *   ContextHelper.get(this, 'sharedPrefix')            // always "dev-identifier-exchange"
-   *   ContextHelper.get(this, 'resourceName', 'table')   // "dev-identifier-exchange-table"
+   *   ContextHelper.get(this, 'prefix')                  // "development-identifier-exchange", or "pr-123-identifier-exchange"
+   *   ContextHelper.get(this, 'sharedPrefix')            // always "development-identifier-exchange"
+   *   ContextHelper.get(this, 'resourceName', 'table')   // "development-identifier-exchange-table"
    *   ContextHelper.get(this, 'resourceId', 'Table')     // lower-cased, max 40 chars
    *
    * Throws an error if a required key is missing.

@@ -4,10 +4,10 @@ import { describe, expect, test } from 'vitest';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { DSQL_PORT, DataStack } from './data.stack';
 import { ContextHelper } from '../utils/context-helper';
+import { GDSEnv, type GDSEnvironment } from '@govuk-connect/dev';
 import { TEST_ENV, sharedSubnetIds, sharedVpcId, ssmRef } from '../testing/helpers';
-import { GDSEnv } from '@govuk-connect/dev';
 
-const synth = (environment: GDSEnv = GDSEnv.DEVELOPMENT, developerId?: string) => {
+const synth = (environment: GDSEnvironment = GDSEnv.DEVELOPMENT, developerId?: string) => {
   const app = new cdk.App();
   ContextHelper.setAll(app, { environment, appName: 'identifier-exchange', developerId });
   const dataStack = new DataStack(app, 'TestDataStack', { env: TEST_ENV });
@@ -20,7 +20,10 @@ describe('Data Stack', () => {
 
     template.resourceCountIs('AWS::DSQL::Cluster', 1);
     template.hasResourceProperties('AWS::DSQL::Cluster', {
-      KmsEncryptionKey: ssmRef(template, '/dev-identifier-exchange/kms/dsql-encryption-key-arn'),
+      KmsEncryptionKey: ssmRef(
+        template,
+        '/development-identifier-exchange/kms/dsql-encryption-key-arn',
+      ),
     });
   });
 
@@ -42,7 +45,7 @@ describe('Data Stack', () => {
 
     for (const [name, value] of [
       [
-        '/dev-identifier-exchange/dsql/cluster-endpoint',
+        '/development-identifier-exchange/dsql/cluster-endpoint',
         {
           'Fn::Join': [
             '.',
@@ -60,9 +63,9 @@ describe('Data Stack', () => {
           ],
         },
       ],
-      ['/dev-identifier-exchange/dsql/cluster-arn', getAtt('Cluster', 'ResourceArn')],
+      ['/development-identifier-exchange/dsql/cluster-arn', getAtt('Cluster', 'ResourceArn')],
       [
-        '/dev-identifier-exchange/dsql/client-security-group-id',
+        '/development-identifier-exchange/dsql/client-security-group-id',
         getAtt('DsqlClientSecurityGroup', 'GroupId'),
       ],
     ] as const) {
@@ -118,7 +121,9 @@ describe('Data Stack', () => {
       ]) {
         template.hasResourceProperties('AWS::SSM::Parameter', { Name: name });
       }
-      expect(JSON.stringify(template.toJSON())).not.toContain('dev-identifier-exchange-dsql');
+      expect(JSON.stringify(template.toJSON())).not.toContain(
+        'development-identifier-exchange-dsql',
+      );
     });
 
     test('still reads the shared VPC and key from the environment', () => {
@@ -126,8 +131,8 @@ describe('Data Stack', () => {
 
       sharedVpcId(template);
       sharedSubnetIds(template);
-      ssmRef(template, '/dev-identifier-exchange/kms/dsql-encryption-key-arn');
-      ssmRef(template, '/dev-identifier-exchange/dsql/endpoint-security-group-id');
+      ssmRef(template, '/development-identifier-exchange/kms/dsql-encryption-key-arn');
+      ssmRef(template, '/development-identifier-exchange/dsql/endpoint-security-group-id');
     });
 
     test('two PR deployments can share the VPC (no per-cluster endpoint)', () => {
@@ -154,7 +159,7 @@ describe('Data Stack', () => {
 
     template.resourceCountIs('AWS::EC2::SecurityGroup', 1);
     template.hasResourceProperties('AWS::EC2::SecurityGroup', {
-      GroupName: 'dev-identifier-exchange-dsql-client',
+      GroupName: 'development-identifier-exchange-dsql-client',
       VpcId: sharedVpcId(template),
       SecurityGroupEgress: [
         Match.objectLike({
@@ -163,7 +168,7 @@ describe('Data Stack', () => {
           ToPort: DSQL_PORT,
           DestinationSecurityGroupId: ssmRef(
             template,
-            '/dev-identifier-exchange/dsql/endpoint-security-group-id',
+            '/development-identifier-exchange/dsql/endpoint-security-group-id',
           ),
         }),
       ],

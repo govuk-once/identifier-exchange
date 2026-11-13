@@ -10,10 +10,10 @@ import {
   VPC_CIDR,
 } from './network-security.stack';
 import { ContextHelper } from '../utils/context-helper';
-import { GovUkOnceEnvironments } from '../constants/environment';
+import { GDSEnv, type GDSEnvironment } from '@govuk-connect/dev';
 import { TEST_ENV } from '../testing/helpers';
 
-const synth = (environment = GovUkOnceEnvironments.Dev) => {
+const synth = (environment: GDSEnvironment = GDSEnv.DEVELOPMENT) => {
   const app = new cdk.App();
   ContextHelper.setAll(app, { environment, appName: 'identifier-exchange' });
   const stack = new NetworkSecurityStack(app, 'TestNetworkSecurityStack', { env: TEST_ENV });
@@ -44,7 +44,7 @@ describe('Network Security Stack', () => {
       template.resourceCountIs('AWS::EC2::VPC', 1);
       template.hasResourceProperties('AWS::EC2::VPC', {
         CidrBlock: VPC_CIDR,
-        Tags: Match.arrayWith([{ Key: 'Name', Value: 'dev-identifier-exchange-vpc' }]),
+        Tags: Match.arrayWith([{ Key: 'Name', Value: 'development-identifier-exchange-vpc' }]),
       });
     });
 
@@ -173,7 +173,7 @@ describe('Network Security Stack', () => {
         ],
       });
       template.hasResourceProperties('AWS::SSM::Parameter', {
-        Name: '/dev-identifier-exchange/dsql/endpoint-security-group-id',
+        Name: '/development-identifier-exchange/dsql/endpoint-security-group-id',
         Value: getAtt('DsqlEndpointSecurityGroup', 'GroupId'),
       });
     });
@@ -181,7 +181,7 @@ describe('Network Security Stack', () => {
     test('refuses a region without a known DSQL endpoint service', () => {
       const app = new cdk.App();
       ContextHelper.setAll(app, {
-        environment: GovUkOnceEnvironments.Dev,
+        environment: GDSEnv.DEVELOPMENT,
         appName: 'identifier-exchange',
       });
 
@@ -251,15 +251,15 @@ describe('Network Security Stack', () => {
     }));
 
     template.hasResourceProperties('AWS::SSM::Parameter', {
-      Name: '/dev-identifier-exchange/network/vpc-id',
+      Name: '/development-identifier-exchange/network/vpc-id',
       Value: { Ref: Match.stringLikeRegexp('^Vpc') },
     });
     template.hasResourceProperties('AWS::SSM::Parameter', {
-      Name: '/dev-identifier-exchange/network/isolated-subnet-ids',
+      Name: '/development-identifier-exchange/network/isolated-subnet-ids',
       Value: { 'Fn::Join': [',', subnetRefs] },
     });
     template.hasResourceProperties('AWS::SSM::Parameter', {
-      Name: '/dev-identifier-exchange/network/availability-zones',
+      Name: '/development-identifier-exchange/network/availability-zones',
       Value: Match.anyValue(),
     });
   });
@@ -269,11 +269,11 @@ describe('Network Security Stack', () => {
 
     for (const [name, value] of [
       [
-        '/dev-identifier-exchange/code-signing/config-arn',
+        '/development-identifier-exchange/code-signing/config-arn',
         getAtt('CodeSigningConfig', 'CodeSigningConfigArn'),
       ],
       // Literal or GetAtt, depending on the signingProfileNamePassedToCfn flag.
-      ['/dev-identifier-exchange/code-signing/signing-profile-name', Match.anyValue()],
+      ['/development-identifier-exchange/code-signing/signing-profile-name', Match.anyValue()],
     ] as const) {
       template.hasResourceProperties('AWS::SSM::Parameter', { Name: name, Value: value });
     }
@@ -281,8 +281,8 @@ describe('Network Security Stack', () => {
 
   describe('KMS keys', () => {
     const KEYS = [
-      ['DsqlEncryptionKey', 'dsql', '/dev-identifier-exchange/kms/dsql-encryption-key-arn'],
-      ['DataEncryptionKey', 'data', '/dev-identifier-exchange/kms/data-encryption-key-arn'],
+      ['DsqlEncryptionKey', 'dsql', '/development-identifier-exchange/kms/dsql-encryption-key-arn'],
+      ['DataEncryptionKey', 'data', '/development-identifier-exchange/kms/data-encryption-key-arn'],
     ] as const;
 
     test('creates a separate key for DSQL storage and for field encryption', () => {
@@ -299,7 +299,7 @@ describe('Network Security Stack', () => {
         RotationPeriodInDays: 90,
       });
       template.hasResourceProperties('AWS::KMS::Alias', {
-        AliasName: `alias/dev-identifier-exchange-${name}`,
+        AliasName: `alias/development-identifier-exchange-${name}`,
         TargetKeyId: getAtt(id, 'Arn'),
       });
     });
@@ -328,13 +328,13 @@ describe('Network Security Stack', () => {
     });
 
     test('keys are deleted with the stack outside prod', () => {
-      const { template } = synth(GovUkOnceEnvironments.Dev);
+      const { template } = synth(GDSEnv.DEVELOPMENT);
 
       template.allResources('AWS::KMS::Key', { DeletionPolicy: 'Delete' });
     });
 
     test('keys are retained in prod', () => {
-      const { template } = synth(GovUkOnceEnvironments.Prod);
+      const { template } = synth(GDSEnv.PRODUCTION);
 
       template.allResources('AWS::KMS::Key', { DeletionPolicy: 'Retain' });
     });

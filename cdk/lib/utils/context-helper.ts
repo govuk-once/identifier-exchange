@@ -47,8 +47,11 @@ const readContext = <K extends keyof AppContext>(
   return value as AppContext[K];
 };
 
-/** Short enough to keep `<id>-dsql-readwrite` inside IAM's 64-character limit. */
-const DEVELOPER_ID = /^[a-z0-9][a-z0-9-]{0,29}$/;
+/**
+ * Short enough that `<id>-<appName>-dsql-readwrite` (the longest name, an IAM
+ * role) stays inside IAM's 64-character limit.
+ */
+const DEVELOPER_ID = /^[a-z0-9][a-z0-9-]{0,19}$/;
 
 const getSharedPrefix = (scope: Construct): string => {
   const environment = readContext(scope, 'environment', true);
@@ -63,7 +66,7 @@ const getPrefix = (scope: Construct): string => {
   }
   if (!DEVELOPER_ID.test(developerId)) {
     throw new Error(
-      `developerId "${developerId}" must be lower-case letters, digits and hyphens (max 30), e.g. pr-123`,
+      `developerId "${developerId}" must be lower-case letters, digits and hyphens (max 20), e.g. pr-123`,
     );
   }
   const appName = readContext(scope, 'appName', true);

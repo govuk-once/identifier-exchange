@@ -35,6 +35,16 @@ export const handler = async (event: MigrationRequest | null = {}): Promise<Migr
  * One line per error in the `cause` chain, including the Postgres SQLSTATE
  * and Node error code (e.g. ENOTFOUND, ETIMEDOUT) where present.
  */
+/** Readable text for any thrown value, without `[object Object]`. */
+const formatValue = (value: unknown): string => {
+  if (value instanceof Error) return `${value.name}: ${value.message}`;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') {
+    return value.toString();
+  }
+  return JSON.stringify(value) ?? typeof value;
+};
+
 export const describeErrorChain = (error: unknown): string => {
   const lines: string[] = [];
   const seen = new Set<unknown>();
@@ -43,14 +53,14 @@ export const describeErrorChain = (error: unknown): string => {
     if (current instanceof Error) {
       const code = (current as { code?: unknown }).code;
       const message = current.message.replace(/\s+/g, ' ').trim();
-      lines.push(`${current.name}${code ? ` [${String(code)}]` : ''}: ${message}`);
+      lines.push(`${current.name}${code ? ` [${formatValue(code)}]` : ''}: ${message}`);
       // Node reports a failed connect to several addresses as an AggregateError.
       if (current instanceof AggregateError) {
-        lines.push(...current.errors.map((e: unknown) => `  - ${String(e)}`));
+        lines.push(...current.errors.map((e: unknown) => `  - ${formatValue(e)}`));
       }
       current = current.cause;
     } else {
-      lines.push(String(current));
+      lines.push(formatValue(current));
       break;
     }
   }

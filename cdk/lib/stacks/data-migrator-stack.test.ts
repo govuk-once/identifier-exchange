@@ -45,16 +45,19 @@ describe('Data Migrator Stack', () => {
     const { template } = synth('pr-123');
 
     template.hasResourceProperties('AWS::Lambda::Function', {
-      FunctionName: 'pr-123-data-migrator',
+      FunctionName: 'pr-123-identifier-exchange-data-migrator',
     });
     template.hasResourceProperties('AWS::Logs::LogGroup', {
-      LogGroupName: '/aws/lambda/pr-123-data-migrator',
+      LogGroupName: '/aws/lambda/pr-123-identifier-exchange-data-migrator',
     });
-    for (const roleName of ['pr-123-dsql-readonly', 'pr-123-dsql-readwrite']) {
+    for (const roleName of [
+      'pr-123-identifier-exchange-dsql-readonly',
+      'pr-123-identifier-exchange-dsql-readwrite',
+    ]) {
       template.hasResourceProperties('AWS::IAM::Role', { RoleName: roleName });
     }
     // Its own DataStack's outputs, but the environment's shared VPC and key.
-    ssmRef(template, '/pr-123/dsql/cluster-arn');
+    ssmRef(template, '/pr-123-identifier-exchange/dsql/cluster-arn');
     ssmRef(template, '/dev-identifier-exchange/kms/dsql-encryption-key-arn');
     sharedVpcId(template);
   });

@@ -54,8 +54,8 @@ describe('Data Stack', () => {
                   { 'Fn::Split': ['.', getAtt('Cluster', 'VpcEndpointServiceName')] },
                 ],
               },
-              'eu-west-2',
-              'on.aws',
+              // CDK folds the adjacent literals (region, 'on.aws') into one.
+              'eu-west-2.on.aws',
             ],
           ],
         },
@@ -106,15 +106,15 @@ describe('Data Stack', () => {
       const { template } = synth(GovUkOnceEnvironments.Dev, 'pr-123');
 
       template.hasResourceProperties('AWS::DSQL::Cluster', {
-        Tags: Match.arrayWith([{ Key: 'Name', Value: 'pr-123-dsql' }]),
+        Tags: Match.arrayWith([{ Key: 'Name', Value: 'pr-123-identifier-exchange-dsql' }]),
       });
       template.hasResourceProperties('AWS::EC2::SecurityGroup', {
-        GroupName: 'pr-123-dsql-client',
+        GroupName: 'pr-123-identifier-exchange-dsql-client',
       });
       for (const name of [
-        '/pr-123/dsql/cluster-endpoint',
-        '/pr-123/dsql/cluster-arn',
-        '/pr-123/dsql/client-security-group-id',
+        '/pr-123-identifier-exchange/dsql/cluster-endpoint',
+        '/pr-123-identifier-exchange/dsql/cluster-arn',
+        '/pr-123-identifier-exchange/dsql/client-security-group-id',
       ]) {
         template.hasResourceProperties('AWS::SSM::Parameter', { Name: name });
       }

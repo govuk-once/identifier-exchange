@@ -3,6 +3,6 @@
   "compilerOptions": {
     "types": ["node", "vitest/globals"]
   },
-  "include": ["src/**/*", "packages/**/*"],
+  "include": ["src/**/*", "cdk/**/*", "packages/**/*"],
   "exclude": ["node_modules", "dist"]
 }

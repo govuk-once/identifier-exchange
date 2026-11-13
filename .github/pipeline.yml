@@ -30,7 +30,7 @@ quality:
       run: pre-commit run --all-files --show-diff-on-failure
     - name: Unit tests
       run: pnpm test
-  dependency-review: false
+  dependency-review: true
   conventional-commits: true
 
 environments:

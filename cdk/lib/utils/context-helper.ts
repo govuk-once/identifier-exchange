@@ -34,6 +34,14 @@ export interface DerivedContextFns {
 
 const RESOURCE_ID_MAX_LENGTH = 40;
 
+export const enviromentFromProcess = (): GDSEnvironment => {
+  try {
+    return GDSEnv.get() || GDSEnv.DEVELOPMENT;
+  } catch {
+    return GDSEnv.DEVELOPMENT;
+  }
+};
+
 function readContext<K extends keyof AppContext>(
   scope: Construct,
   key: K,

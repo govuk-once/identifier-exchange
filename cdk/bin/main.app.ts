@@ -1,10 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
-import { ContextHelper } from '../lib/utils/context-helper.js';
+import { ContextHelper, enviromentFromProcess } from '../lib/utils/context-helper.js';
 import { NetworkSecurityStack } from '../lib/stacks/network-security.stack.js';
 import { DataStack } from '../lib/stacks/data.stack.js';
 // import { ExchangeApiStack } from '../lib/stacks/exchange-api.stack';
 import { DataMigratorStack } from '../lib/stacks/data-migrator-stack.js';
-import { GDSEnv } from '@govuk-connect/dev';
 
 /**
  * `pr-123` for a pull request, unset for the shared environment deployment.
@@ -19,7 +18,7 @@ const prNumber =
   process.env['GITHUB_EVENT_NAME']?.startsWith('pull_request') &&
   /^refs\/pull\/(\d+)\//.exec(process.env['GITHUB_REF'] ?? '')?.[1];
 const developerId = process.env['DEVELOPER_ID'] || (prNumber ? `pr-${prNumber}` : undefined);
-const environment = GDSEnv.get() || GDSEnv.DEVELOPMENT;
+const environment = enviromentFromProcess();
 
 const app = new cdk.App();
 ContextHelper.setAll(app, {

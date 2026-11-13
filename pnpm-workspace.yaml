@@ -8,9 +8,11 @@ packages:
   - src
   - '.'
 allowBuilds:
-  '@govuk-connect/dev': true
-  '@govuk-connect/dev@file:../platform-pkg-dev': true
+  "@govuk-connect/dev": true
+  "@govuk-connect/dev@file:../platform-pkg-dev": true
   esbuild: true
+minimumReleaseAgeExclude:
+  - '@govuk-connect/dev'
 blockExoticSubdeps: true
 trustPolicy: no-downgrade
 minimumReleaseAge: 10080

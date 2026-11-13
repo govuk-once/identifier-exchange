@@ -6,8 +6,8 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as signer from 'aws-cdk-lib/aws-signer';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import type { Construct } from 'constructs';
-import { ContextHelper } from '../utils/context-helper';
-import { SharedResources } from '../utils/shared-resources';
+import { ContextHelper } from '../utils/context-helper.js';
+import { SharedResources } from '../utils/shared-resources.js';
 
 // TODO(network engineer sign-off): the CIDR, AZ count and subnet mask are very
 // hard to change once deployed. Confirm before the first deploy to any account.

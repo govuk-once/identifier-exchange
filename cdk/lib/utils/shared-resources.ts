@@ -1,5 +1,5 @@
 import type { Construct } from 'constructs';
-import { ContextHelper } from './context-helper';
+import { ContextHelper } from './context-helper.js';
 
 /**
  * Names that stacks publish and downstream stacks look up. Stacks find

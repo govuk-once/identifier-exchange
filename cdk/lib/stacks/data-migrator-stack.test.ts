@@ -2,9 +2,9 @@ import * as cdk from 'aws-cdk-lib';
 import { describe, expect, test } from 'vitest';
 
 import { Match, Template } from 'aws-cdk-lib/assertions';
-import { DataMigratorStack } from './data-migrator-stack';
-import { ContextHelper } from '../utils/context-helper';
-import { GDSEnv, type GDSEnvironment } from '@govuk-connect/dev';
+import { DataMigratorStack } from './data-migrator-stack.js';
+import { ContextHelper } from '../utils/context-helper.js';
+import { GDSEnv } from '@govuk-connect/dev';
 import { TEST_ENV, sharedSubnetIds, sharedVpcId, ssmRef } from '../testing/helpers';
 
 const synth = (developerId?: string) => {

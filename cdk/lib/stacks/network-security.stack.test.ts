@@ -8,10 +8,10 @@ import {
   MAX_AZS,
   NetworkSecurityStack,
   VPC_CIDR,
-} from './network-security.stack';
-import { ContextHelper } from '../utils/context-helper';
+} from './network-security.stack.js';
+import { ContextHelper } from '../utils/context-helper.js';
 import { GDSEnv, type GDSEnvironment } from '@govuk-connect/dev';
-import { TEST_ENV } from '../testing/helpers';
+import { TEST_ENV } from '../testing/helpers.js';
 
 const synth = (environment: GDSEnvironment = GDSEnv.DEVELOPMENT) => {
   const app = new cdk.App();

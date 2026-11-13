@@ -2,10 +2,10 @@ import * as cdk from 'aws-cdk-lib';
 import { describe, expect, test } from 'vitest';
 
 import { Match, Template } from 'aws-cdk-lib/assertions';
-import { DSQL_PORT, DataStack } from './data.stack';
-import { ContextHelper } from '../utils/context-helper';
+import { DSQL_PORT, DataStack } from './data.stack.js';
+import { ContextHelper } from '../utils/context-helper.js';
 import { GDSEnv, type GDSEnvironment } from '@govuk-connect/dev';
-import { TEST_ENV, sharedSubnetIds, sharedVpcId, ssmRef } from '../testing/helpers';
+import { TEST_ENV, sharedSubnetIds, sharedVpcId, ssmRef } from '../testing/helpers.js';
 
 const synth = (environment: GDSEnvironment = GDSEnv.DEVELOPMENT, developerId?: string) => {
   const app = new cdk.App();

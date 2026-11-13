@@ -1,7 +1,7 @@
 import type { Template } from 'aws-cdk-lib/assertions';
 import { expect } from 'vitest';
 import { GDSEnv } from '@govuk-connect/dev';
-import { MAX_AZS } from '../stacks/network-security.stack';
+import { MAX_AZS } from '../stacks/network-security.stack.js';
 
 export const TEST_ENV = { account: '123456789012', region: 'eu-west-2' };
 

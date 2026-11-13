@@ -4,10 +4,10 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as kms from 'aws-cdk-lib/aws-kms';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import type { Construct } from 'constructs';
-import { ContextHelper } from '../utils/context-helper';
-import { SharedResources } from '../utils/shared-resources';
-import { importSharedVpc } from '../utils/shared-vpc';
-import { DSQL_PORT } from './network-security.stack';
+import { ContextHelper } from '../utils/context-helper.js';
+import { SharedResources } from '../utils/shared-resources.js';
+import { importSharedVpc } from '../utils/shared-vpc.js';
+import { DSQL_PORT } from './network-security.stack.js';
 
 /**
  * Roles people use in the console. Outside prod they may connect from
@@ -22,7 +22,7 @@ export const consoleUserRoles = (account: string) => [
   `arn:aws:iam::${account}:role/aws-reserved/sso.amazonaws.com/*`,
 ];
 
-export { DSQL_PORT } from './network-security.stack';
+export { DSQL_PORT } from './network-security.stack.js';
 
 /**
  * Aurora DSQL cluster, reachable only through the shared DSQL VPC endpoint

@@ -1,9 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
-import { ContextHelper } from '../lib/utils/context-helper';
-import { NetworkSecurityStack } from '../lib/stacks/network-security.stack';
-import { DataStack } from '../lib/stacks/data.stack';
+import { ContextHelper } from '../lib/utils/context-helper.js';
+import { NetworkSecurityStack } from '../lib/stacks/network-security.stack.js';
+import { DataStack } from '../lib/stacks/data.stack.js';
 // import { ExchangeApiStack } from '../lib/stacks/exchange-api.stack';
-import { DataMigratorStack } from '../lib/stacks/data-migrator-stack';
+import { DataMigratorStack } from '../lib/stacks/data-migrator-stack.js';
 import { GDSEnv } from '@govuk-connect/dev';
 
 /**

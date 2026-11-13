@@ -9,9 +9,9 @@ import * as logs from 'aws-cdk-lib/aws-logs';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as triggers from 'aws-cdk-lib/triggers';
 import type { Construct } from 'constructs';
-import { ContextHelper } from '../utils/context-helper';
-import { SharedResources } from '../utils/shared-resources';
-import { importSharedVpc } from '../utils/shared-vpc';
+import { ContextHelper } from '../utils/context-helper.js';
+import { SharedResources } from '../utils/shared-resources.js';
+import { importSharedVpc } from '../utils/shared-vpc.js';
 
 const REPO_ROOT = path.join(import.meta.dirname, '..', '..', '..');
 

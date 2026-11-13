@@ -2,8 +2,8 @@ import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import type { Construct } from 'constructs';
-import { MAX_AZS } from '../stacks/network-security.stack';
-import { SharedResources } from './shared-resources';
+import { MAX_AZS } from '../stacks/network-security.stack.js';
+import { SharedResources } from './shared-resources.js';
 
 /**
  * The VPC from NetworkSecurityStack, resolved from SSM by CloudFormation at

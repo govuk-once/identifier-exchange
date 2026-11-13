@@ -1,6 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import type { VpcContextResponse, VpcSubnetGroupType } from 'aws-cdk-lib/cx-api';
-import { ISOLATED_SUBNET_GROUP, VPC_CIDR } from '../stacks/network-security.stack';
+import { ISOLATED_SUBNET_GROUP, VPC_CIDR } from '../stacks/network-security.stack.js';
 import { ContextProvider } from 'aws-cdk-lib/cloud-assembly-schema';
 
 export const TEST_ENV = { account: '123456789012', region: 'eu-west-2' };

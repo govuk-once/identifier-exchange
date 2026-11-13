@@ -28,6 +28,8 @@ quality:
   checks:
     - name: Hygiene
       run: pre-commit run --all-files --show-diff-on-failure
+    - name: Unit tests
+      run: pnpm test:all
   dependency-review: false
   conventional-commits: true
 

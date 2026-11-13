@@ -21,7 +21,7 @@ pr:
     destroy: pnpm run destroy:main
 
 quality:
-  aws: false # cdk synth for checkov
+  aws: true # cdk synth for checkov
   nx: false
   environment: dev
   setup: python3 -m pip install semgrep pre-commit checkov

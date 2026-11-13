@@ -23,7 +23,7 @@ pr:
 quality:
   aws: true # cdk synth for checkov
   nx: false
-  environment: dev
+  environment: ephemeral
   setup: python3 -m pip install semgrep pre-commit checkov
   checks:
     - name: Hygiene

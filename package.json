@@ -16,10 +16,10 @@
     "cdk:decoupled": "cd cdk &&  cdk --app 'npx tsx bin/decoupled.app.ts'",
     "synth:main": "npm run cdk:main -- synth",
     "deploy:main": "npm run cdk:main -- deploy --all --require-approval never",
-    "destroy:main": "npm run cdk:main -- destroy --all",
+    "destroy:main": "npm run cdk:main -- destroy --all --force",
     "synth:decoupled": "npm run cdk:decoupled -- synth",
     "deploy:decoupled": "npm run cdk:decoupled -- deploy --all --require-approval never",
-    "destroy:decoupled": "npm run cdk:decoupled -- destroy --all",
+    "destroy:decoupled": "npm run cdk:decoupled -- destroy --all --force",
     "test": "vitest .",
     "migration:create": "node src/db/migrator/create-migration.ts"
   },

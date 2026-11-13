@@ -2,7 +2,13 @@ import * as cdk from 'aws-cdk-lib';
 import { describe, expect, test } from 'vitest';
 
 import { Match, Template } from 'aws-cdk-lib/assertions';
-import { MAX_AZS, NetworkSecurityStack, VPC_CIDR } from './network-security.stack';
+import {
+  DSQL_ENDPOINT_SERVICE_NAMES,
+  DSQL_PORT,
+  MAX_AZS,
+  NetworkSecurityStack,
+  VPC_CIDR,
+} from './network-security.stack';
 import { ContextHelper } from '../utils/context-helper';
 import { GovUkOnceEnvironments } from '../constants/environment';
 import { TEST_ENV } from '../testing/helpers';
@@ -143,7 +149,48 @@ describe('Network Security Stack', () => {
     test('creates no other endpoints', () => {
       const { template } = synth();
 
-      template.resourceCountIs('AWS::EC2::VPCEndpoint', 5);
+      template.resourceCountIs('AWS::EC2::VPCEndpoint', 6);
+    });
+
+    test('has the one DSQL data-plane endpoint that every cluster in the VPC shares', () => {
+      const { template } = synth();
+
+      template.hasResourceProperties('AWS::EC2::VPCEndpoint', {
+        VpcEndpointType: 'Interface',
+        ServiceName: DSQL_ENDPOINT_SERVICE_NAMES['eu-west-2'],
+        PrivateDnsEnabled: true,
+        SecurityGroupIds: [getAtt('DsqlEndpointSecurityGroup', 'GroupId')],
+      });
+      template.hasResourceProperties('AWS::EC2::SecurityGroup', {
+        GroupDescription: Match.stringLikeRegexp('DSQL data-plane'),
+        SecurityGroupIngress: [
+          Match.objectLike({
+            CidrIp: VPC_CIDR,
+            IpProtocol: 'tcp',
+            FromPort: DSQL_PORT,
+            ToPort: DSQL_PORT,
+          }),
+        ],
+      });
+      template.hasResourceProperties('AWS::SSM::Parameter', {
+        Name: '/dev-identifier-exchange/dsql/endpoint-security-group-id',
+        Value: getAtt('DsqlEndpointSecurityGroup', 'GroupId'),
+      });
+    });
+
+    test('refuses a region without a known DSQL endpoint service', () => {
+      const app = new cdk.App();
+      ContextHelper.setAll(app, {
+        environment: GovUkOnceEnvironments.Dev,
+        appName: 'identifier-exchange',
+      });
+
+      expect(
+        () =>
+          new NetworkSecurityStack(app, 'Elsewhere', {
+            env: { account: TEST_ENV.account, region: 'ap-south-2' },
+          }),
+      ).toThrow(/No Aurora DSQL endpoint service name for region "ap-south-2"/);
     });
 
     test('endpoint security group accepts HTTPS from the VPC CIDR only', () => {

@@ -1,4 +1,4 @@
-mport * as cdk from 'aws-cdk-lib';
+import * as cdk from 'aws-cdk-lib';
 import { describe, expect, test } from 'vitest';
 
 import { Match, Template } from 'aws-cdk-lib/assertions';
@@ -108,9 +108,9 @@ describe('Data Stack', () => {
       template.hasResourceProperties('AWS::DSQL::Cluster', {
         Tags: Match.arrayWith([{ Key: 'Name', Value: 'pr-123-dsql' }]),
       });
-      for (const name of ['pr-123-dsql-client', 'pr-123-dsql-endpoint']) {
-        template.hasResourceProperties('AWS::EC2::SecurityGroup', { GroupName: name });
-      }
+      template.hasResourceProperties('AWS::EC2::SecurityGroup', {
+        GroupName: 'pr-123-dsql-client',
+      });
       for (const name of [
         '/pr-123/dsql/cluster-endpoint',
         '/pr-123/dsql/cluster-arn',
@@ -127,6 +127,13 @@ describe('Data Stack', () => {
       sharedVpcId(template);
       sharedSubnetIds(template);
       ssmRef(template, '/dev-identifier-exchange/kms/dsql-encryption-key-arn');
+      ssmRef(template, '/dev-identifier-exchange/dsql/endpoint-security-group-id');
+    });
+
+    test('two PR deployments can share the VPC (no per-cluster endpoint)', () => {
+      const { template } = synth(GovUkOnceEnvironments.Dev, 'pr-123');
+
+      template.resourceCountIs('AWS::EC2::VPCEndpoint', 0);
     });
 
     test('rejects a developer ID that would make invalid resource names', () => {
@@ -134,42 +141,34 @@ describe('Data Stack', () => {
     });
   });
 
-  test('places the DSQL interface endpoint in the isolated subnets of the shared VPC', () => {
+  test('uses the shared DSQL endpoint instead of creating its own', () => {
     const { template } = synth();
 
-    template.hasResourceProperties('AWS::EC2::VPCEndpoint', {
-      VpcEndpointType: 'Interface',
-      VpcId: sharedVpcId(template),
-      SubnetIds: sharedSubnetIds(template),
-      PrivateDnsEnabled: true,
-      ServiceName: { 'Fn::GetAtt': [Match.stringLikeRegexp('^Cluster'), 'VpcEndpointServiceName'] },
-    });
+    // A VPC allows only one DSQL endpoint with private DNS, so it lives in
+    // NetworkSecurityStack and every cluster shares it.
+    template.resourceCountIs('AWS::EC2::VPCEndpoint', 0);
   });
 
-  test('only DSQL client security group can reach the endpoint', () => {
+  test('DSQL clients may reach only the shared endpoint, on the DSQL port', () => {
     const { template } = synth();
-    const sgId = (prefix: string) => ({
-      'Fn::GetAtt': [Match.stringLikeRegexp(`^${prefix}`), 'GroupId'],
-    });
 
-    template.resourceCountIs('AWS::EC2::SecurityGroupIngress', 1);
-    template.hasResourceProperties('AWS::EC2::SecurityGroupIngress', {
-      IpProtocol: 'tcp',
-      FromPort: DSQL_PORT,
-      ToPort: DSQL_PORT,
-      GroupId: sgId('DsqlEndpointSecurityGroup'),
-      SourceSecurityGroupId: sgId('DsqlClientSecurityGroup'),
+    template.resourceCountIs('AWS::EC2::SecurityGroup', 1);
+    template.hasResourceProperties('AWS::EC2::SecurityGroup', {
+      GroupName: 'dev-identifier-exchange-dsql-client',
+      VpcId: sharedVpcId(template),
+      SecurityGroupEgress: [
+        Match.objectLike({
+          IpProtocol: 'tcp',
+          FromPort: DSQL_PORT,
+          ToPort: DSQL_PORT,
+          DestinationSecurityGroupId: ssmRef(
+            template,
+            '/dev-identifier-exchange/dsql/endpoint-security-group-id',
+          ),
+        }),
+      ],
     });
-    template.hasResourceProperties('AWS::EC2::SecurityGroupEgress', {
-      FromPort: DSQL_PORT,
-      ToPort: DSQL_PORT,
-      GroupId: sgId('DsqlClientSecurityGroup'),
-      DestinationSecurityGroupId: sgId('DsqlEndpointSecurityGroup'),
-    });
-    // Neither group accepts traffic from a CIDR range.
-    for (const sg of Object.values(template.findResources('AWS::EC2::SecurityGroup'))) {
-      expect(sg.Properties?.SecurityGroupIngress).toBeUndefined();
-    }
+    template.resourceCountIs('AWS::EC2::SecurityGroupIngress', 0);
   });
 
   test('runs no Lambda-backed resources (migrations live in DataMigratorStack)', () => {

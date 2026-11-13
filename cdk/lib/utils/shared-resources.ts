@@ -25,6 +25,9 @@ export const SharedResources = {
     `/${ContextHelper.get(scope, 'sharedPrefix')}/network/availability-zones`,
 
   // SSM parameters published by NetworkSecurityStack.
+  /** Security group on the shared DSQL endpoint; clients allow egress to it. */
+  dsqlEndpointSecurityGroupIdParameter: (scope: Construct): string =>
+    `/${ContextHelper.get(scope, 'sharedPrefix')}/dsql/endpoint-security-group-id`,
   /** For `kms.Key.fromKeyArn`: encrypts the DSQL cluster at rest. */
   dsqlEncryptionKeyArnParameter: (scope: Construct): string =>
     `/${ContextHelper.get(scope, 'sharedPrefix')}/kms/dsql-encryption-key-arn`,

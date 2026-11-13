@@ -7,6 +7,7 @@ import type { Construct } from 'constructs';
 import { ContextHelper } from '../utils/context-helper';
 import { SharedResources } from '../utils/shared-resources';
 import { importSharedVpc } from '../utils/shared-vpc';
+import { DSQL_PORT } from './network-security.stack';
 
 /**
  * Roles people use in the console. Outside prod they may connect from
@@ -21,16 +22,16 @@ export const consoleUserRoles = (account: string) => [
   `arn:aws:iam::${account}:role/aws-reserved/sso.amazonaws.com/*`,
 ];
 
-/** PostgreSQL wire protocol port that the DSQL endpoint listens on. */
-export const DSQL_PORT = 5432;
+export { DSQL_PORT } from './network-security.stack';
 
 /**
- * Aurora DSQL cluster, reachable only through a VPC interface endpoint.
- * Schema migrations run from DataMigratorStack.
+ * Aurora DSQL cluster, reachable only through the shared DSQL VPC endpoint
+ * in NetworkSecurityStack. Schema migrations run from DataMigratorStack.
  *
- * Workloads that need the database attach `clientSecurityGroup`; nothing else
- * can reach the endpoint, and the cluster policy rejects connections that do
- * not come from inside the VPC.
+ * Workloads that need the database attach `clientSecurityGroup`, which may
+ * reach the endpoint; the cluster policy rejects connections that do not come
+ * from inside the VPC, and IAM decides which roles may connect to this
+ * cluster.
  *
  * Encrypted at rest with the customer-managed DSQL key from
  * NetworkSecurityStack.
@@ -41,7 +42,6 @@ export const DSQL_PORT = 5432;
  */
 export class DataStack extends cdk.Stack {
   public readonly cluster: dsql.CfnCluster;
-  public readonly endpoint: ec2.InterfaceVpcEndpoint;
   /**
    * Hostname that resolves to the VPC endpoint. Workloads must connect with
    * this, not `cluster.attrEndpoint`, which resolves to a public address that
@@ -99,7 +99,7 @@ export class DataStack extends cdk.Stack {
     // PrivateLink hostname: <cluster-id>.<service-suffix>.<region>.on.aws,
     // where the suffix is the last part of the endpoint service name
     // (com.amazonaws.<region>.dsql-xxxx -> dsql-xxxx). Private DNS on the
-    // endpoint below resolves it to the endpoint's IPs. The DSQL connector
+    // shared endpoint in NetworkSecurityStack resolves it to that endpoint. The DSQL connector
     // parses the region from this form and signs the auth token for it.
     this.privateHostname = cdk.Fn.join('.', [
       this.cluster.attrIdentifier,
@@ -115,30 +115,21 @@ export class DataStack extends cdk.Stack {
       allowAllOutbound: false,
     });
 
-    const endpointSecurityGroup = new ec2.SecurityGroup(this, 'DsqlEndpointSecurityGroup', {
-      vpc,
-      securityGroupName: ContextHelper.get(this, 'resourceName', 'dsql-endpoint'),
-      description: 'Aurora DSQL VPC endpoint - ingress from DSQL clients only',
-      allowAllOutbound: false,
-    });
-
-    this.endpoint = new ec2.InterfaceVpcEndpoint(this, 'DsqlEndpoint', {
-      vpc,
-      service: new ec2.InterfaceVpcEndpointService(
-        this.cluster.attrVpcEndpointServiceName,
-        DSQL_PORT,
+    // The endpoint is shared by every cluster in the VPC (see
+    // NetworkSecurityStack), so clients reach it through its security group.
+    const endpointSecurityGroup = ec2.SecurityGroup.fromSecurityGroupId(
+      this,
+      'DsqlEndpointSecurityGroup',
+      ssm.StringParameter.valueForStringParameter(
+        this,
+        SharedResources.dsqlEndpointSecurityGroupIdParameter(this),
       ),
-      subnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
-      privateDnsEnabled: true,
-      securityGroups: [endpointSecurityGroup],
-      open: false,
-    });
-
-    // Adds the ingress rule on the endpoint SG and the matching egress rule on
-    // the client SG.
-    this.endpoint.connections.allowDefaultPortFrom(
-      this.clientSecurityGroup,
-      'DSQL clients to DSQL endpoint',
+      { mutable: false },
+    );
+    this.clientSecurityGroup.addEgressRule(
+      ec2.Peer.securityGroupId(endpointSecurityGroup.securityGroupId),
+      ec2.Port.tcp(DSQL_PORT),
+      'DSQL clients to the shared DSQL endpoint',
     );
 
     // Published for DataMigratorStack and application stacks to look up.

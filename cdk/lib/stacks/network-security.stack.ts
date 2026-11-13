@@ -22,6 +22,23 @@ export const ISOLATED_SUBNET_GROUP = 'IsolatedPrivate';
 /** Matches the rotation period on UDP's keys. */
 export const KEY_ROTATION_PERIOD = cdk.Duration.days(90);
 
+/** PostgreSQL wire protocol port that the DSQL endpoint listens on. */
+export const DSQL_PORT = 5432;
+
+/**
+ * Aurora DSQL's PrivateLink endpoint service. There is one per Region, shared
+ * by every cluster in it (the cluster's VpcEndpointServiceName attribute
+ * returns the same value), and its private DNS zone (*.dsql-xxxx.<region>.on.aws)
+ * can only be attached to one endpoint per VPC. So the endpoint lives here,
+ * once, rather than with each cluster.
+ *
+ * To add a Region, read the name from any cluster there:
+ *   aws dsql get-vpc-endpoint-service-name --identifier <cluster-id>
+ */
+export const DSQL_ENDPOINT_SERVICE_NAMES: Readonly<Record<string, string>> = {
+  'eu-west-2': 'com.amazonaws.eu-west-2.dsql-qxpi',
+};
+
 const HTTPS_PORT = 443;
 const ANY_IPV4 = '0.0.0.0/0';
 
@@ -54,6 +71,9 @@ export class NetworkSecurityStack extends cdk.Stack {
   public readonly networkAcl: ec2.NetworkAcl;
   /** Guards every interface endpoint: HTTPS from inside the VPC only. */
   public readonly endpointSecurityGroup: ec2.SecurityGroup;
+  /** Shared DSQL data-plane endpoint for every cluster's connections. */
+  public readonly dsqlEndpoint: ec2.InterfaceVpcEndpoint;
+  public readonly dsqlEndpointSecurityGroup: ec2.SecurityGroup;
   public readonly signingProfile: signer.SigningProfile;
   public readonly codeSigningConfig: lambda.CodeSigningConfig;
   public readonly dsqlEncryptionKey: kms.Key;
@@ -79,6 +99,7 @@ export class NetworkSecurityStack extends cdk.Stack {
 
     this.networkAcl = this.createZeroEgressNacl();
     this.endpointSecurityGroup = this.createEndpoints();
+    [this.dsqlEndpoint, this.dsqlEndpointSecurityGroup] = this.createDsqlEndpoint();
 
     this.signingProfile = new signer.SigningProfile(this, 'SigningProfile', {
       platform: signer.Platform.AWS_LAMBDA_SHA384_ECDSA,
@@ -121,6 +142,11 @@ export class NetworkSecurityStack extends cdk.Stack {
           ',',
           isolatedSubnets.map((s) => s.availabilityZone),
         ),
+      ],
+      [
+        'DsqlEndpointSecurityGroupIdParameter',
+        SharedResources.dsqlEndpointSecurityGroupIdParameter(this),
+        this.dsqlEndpointSecurityGroup.securityGroupId,
       ],
       [
         'DsqlEncryptionKeyArnParameter',
@@ -256,5 +282,43 @@ export class NetworkSecurityStack extends cdk.Stack {
     });
 
     return endpointSecurityGroup;
+  }
+
+  /**
+   * One DSQL data-plane endpoint for all clusters in the VPC, with private DNS
+   * so each cluster's private hostname resolves to it. Who may connect to a
+   * given cluster is decided by IAM and that cluster's policy, not here.
+   */
+  private createDsqlEndpoint(): [ec2.InterfaceVpcEndpoint, ec2.SecurityGroup] {
+    const region = this.region;
+    const serviceName = cdk.Token.isUnresolved(region)
+      ? undefined
+      : DSQL_ENDPOINT_SERVICE_NAMES[region];
+    if (!serviceName) {
+      throw new Error(
+        `No Aurora DSQL endpoint service name for region "${region}". ` +
+          'Add it to DSQL_ENDPOINT_SERVICE_NAMES (and give the stack an explicit env).',
+      );
+    }
+
+    const securityGroup = new ec2.SecurityGroup(this, 'DsqlEndpointSecurityGroup', {
+      vpc: this.vpc,
+      description: 'Aurora DSQL data-plane endpoint - PostgreSQL from inside the VPC only',
+      allowAllOutbound: false,
+    });
+    securityGroup.addIngressRule(
+      ec2.Peer.ipv4(VPC_CIDR),
+      ec2.Port.tcp(DSQL_PORT),
+      'PostgreSQL from inside the VPC',
+    );
+
+    const endpoint = this.vpc.addInterfaceEndpoint('DsqlDataEndpoint', {
+      service: new ec2.InterfaceVpcEndpointService(serviceName, DSQL_PORT),
+      subnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
+      privateDnsEnabled: true,
+      securityGroups: [securityGroup],
+      open: false,
+    });
+    return [endpoint, securityGroup];
   }
 }

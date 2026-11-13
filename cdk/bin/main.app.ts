@@ -19,10 +19,11 @@ const prNumber =
   process.env.GITHUB_EVENT_NAME?.startsWith('pull_request') &&
   /^refs\/pull\/(\d+)\//.exec(process.env.GITHUB_REF ?? '')?.[1];
 const developerId = process.env.DEVELOPER_ID || (prNumber ? `pr-${prNumber}` : undefined);
+const environment = (process.env.ENV as GovUkOnceEnvironments) || GovUkOnceEnvironments.Dev;
 
 const app = new cdk.App();
 ContextHelper.setAll(app, {
-  environment: (process.env.ENV as GovUkOnceEnvironments) || GovUkOnceEnvironments.Dev,
+  environment,
   appName: 'identifier-exchange',
   developerId,
 });
@@ -45,7 +46,10 @@ const stackProps = (name: string): cdk.StackProps => ({
 // The network stack is shared by every deployment in the environment, so an
 // isolated deployment neither deploys nor (on PR cleanup) destroys it; it
 // reads the shared VPC and keys from SSM instead.
-const network = new NetworkSecurityStack(app, 'VpcStack', { env });
+const network = new NetworkSecurityStack(app, 'NetworkSecurityStack', {
+  env,
+  stackName: `${environment}-network-security-stack`,
+});
 const data = new DataStack(app, 'DataStack', stackProps('data-stack'));
 const migrator = new DataMigratorStack(app, 'DataMigratorStack', stackProps('data-migrator-stack'));
 

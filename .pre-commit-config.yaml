@@ -68,6 +68,7 @@ repos:
         # (^|/) not ^ - paths are relative to the git root, which in a monorepo
         # means connect-org/pnpm-lock.yaml rather than pnpm-lock.yaml.
         exclude: '(^|/)(pnpm-lock\.yaml|package-lock\.json|yarn\.lock|.*\.min\.(js|css)|.*\.snap)$'
+        additional_dependencies: ["PyYAML"]
         # Two false positives the keyword detector raises across this estate.
         # Excluded by line rather than by file, so every other line in those
         # files is still scanned:

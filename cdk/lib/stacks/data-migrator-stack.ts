@@ -12,6 +12,7 @@ import type { Construct } from 'constructs';
 import { ContextHelper } from '../utils/context-helper.js';
 import { SharedResources } from '../utils/shared-resources.js';
 import { importSharedVpc } from '../utils/shared-vpc.js';
+import { GDSEnv } from '@govuk-connect/dev';
 
 const REPO_ROOT = path.join(import.meta.dirname, '..', '..', '..');
 
@@ -92,7 +93,7 @@ export class DataMigratorStack extends cdk.Stack {
     this.migrator = new nodejs.NodejsFunction(this, 'Migrator', {
       functionName,
       description: 'Applies Aurora DSQL schema migrations',
-      entry: path.join(REPO_ROOT, 'src', 'db', 'migrator', 'handler.ts'),
+      entry: path.join(REPO_ROOT, 'src', 'db', 'migrator', 'migrator.handler.ts'),
       projectRoot: REPO_ROOT,
       depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
       runtime: lambda.Runtime.NODEJS_24_X,
@@ -120,8 +121,11 @@ export class DataMigratorStack extends cdk.Stack {
       },
       logGroup: new logs.LogGroup(this, 'MigratorLogs', {
         logGroupName: `/aws/lambda/${functionName}`,
-        retention: logs.RetentionDays.THREE_MONTHS,
-        removalPolicy: cdk.RemovalPolicy.DESTROY,
+        retention: GDSEnv.isProd() ? logs.RetentionDays.ONE_YEAR : logs.RetentionDays.THREE_MONTHS,
+        removalPolicy:
+          GDSEnv.isProd() || GDSEnv.isStage()
+            ? cdk.RemovalPolicy.RETAIN
+            : cdk.RemovalPolicy.DESTROY,
       }),
     });
 

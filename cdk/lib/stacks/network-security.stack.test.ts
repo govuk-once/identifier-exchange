@@ -4,7 +4,6 @@ import { describe, expect, test } from 'vitest';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import {
   DSQL_ENDPOINT_SERVICE_NAMES,
-  DSQL_PORT,
   MAX_AZS,
   NetworkSecurityStack,
   VPC_CIDR,
@@ -12,6 +11,7 @@ import {
 import { ContextHelper } from '../utils/context-helper.js';
 import { GDSEnv, type GDSEnvironment } from '@govuk-connect/dev';
 import { TEST_ENV } from '../testing/helpers.js';
+import { NetworkSecurityContstants } from '../constants/network-security.const.js';
 
 const synth = (environment: GDSEnvironment = GDSEnv.DEVELOPMENT) => {
   const app = new cdk.App();
@@ -167,8 +167,8 @@ describe('Network Security Stack', () => {
           Match.objectLike({
             CidrIp: VPC_CIDR,
             IpProtocol: 'tcp',
-            FromPort: DSQL_PORT,
-            ToPort: DSQL_PORT,
+            FromPort: NetworkSecurityContstants.DSQL_PORT,
+            ToPort: NetworkSecurityContstants.DSQL_PORT,
           }),
         ],
       });

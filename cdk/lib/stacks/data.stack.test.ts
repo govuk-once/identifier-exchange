@@ -2,10 +2,11 @@ import * as cdk from 'aws-cdk-lib';
 import { describe, expect, test } from 'vitest';
 
 import { Match, Template } from 'aws-cdk-lib/assertions';
-import { DSQL_PORT, DataStack } from './data.stack.js';
+import { DataStack } from './data.stack.js';
 import { ContextHelper } from '../utils/context-helper.js';
 import { GDSEnv, type GDSEnvironment } from '@govuk-connect/dev';
 import { TEST_ENV, sharedSubnetIds, sharedVpcId, ssmRef } from '../testing/helpers.js';
+import { NetworkSecurityContstants } from '../constants/network-security.const.js';
 
 const synth = (environment: GDSEnvironment = GDSEnv.DEVELOPMENT, developerId?: string) => {
   const app = new cdk.App();
@@ -164,8 +165,8 @@ describe('Data Stack', () => {
       SecurityGroupEgress: [
         Match.objectLike({
           IpProtocol: 'tcp',
-          FromPort: DSQL_PORT,
-          ToPort: DSQL_PORT,
+          FromPort: NetworkSecurityContstants.DSQL_PORT,
+          ToPort: NetworkSecurityContstants.DSQL_PORT,
           DestinationSecurityGroupId: ssmRef(
             template,
             '/development-identifier-exchange/dsql/endpoint-security-group-id',

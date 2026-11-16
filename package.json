@@ -11,7 +11,6 @@
     "registry": "https://registry-prod-904690835784.d.codeartifact.eu-west-2.amazonaws.com/npm/registry-prod-repo"
   },
   "scripts": {
-    "postinstall": "chmod +x node_modules/@govuk-connect/dev/hooks/* 2>/dev/null || true",
     "cdk:main": "cd cdk && cdk --app 'npx tsx bin/main.app.ts'",
     "cdk:decoupled": "cd cdk &&  cdk --app 'npx tsx bin/decoupled.app.ts'",
     "synth:main": "npm run cdk:main -- synth",

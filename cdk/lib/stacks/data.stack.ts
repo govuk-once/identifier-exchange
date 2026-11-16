@@ -7,7 +7,8 @@ import type { Construct } from 'constructs';
 import { ContextHelper } from '../utils/context-helper.js';
 import { SharedResources } from '../utils/shared-resources.js';
 import { importSharedVpc } from '../utils/shared-vpc.js';
-import { DSQL_PORT } from './network-security.stack.js';
+import { GDSEnv } from '@govuk-connect/dev';
+import { NetworkSecurityContstants } from '../constants/network-security.const.js';
 
 /**
  * Roles people use in the console. Outside prod they may connect from
@@ -21,8 +22,6 @@ export const consoleUserRoles = (account: string) => [
   // IAM Identity Center (SSO) permission sets.
   `arn:aws:iam::${account}:role/aws-reserved/sso.amazonaws.com/*`,
 ];
-
-export { DSQL_PORT } from './network-security.stack.js';
 
 /**
  * Aurora DSQL cluster, reachable only through the shared DSQL VPC endpoint
@@ -54,7 +53,7 @@ export class DataStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const isProd = ContextHelper.get(this, 'isProd');
+    const isProd = GDSEnv.isProd();
 
     const vpc = importSharedVpc(this);
 
@@ -94,7 +93,9 @@ export class DataStack extends cdk.Stack {
       }),
       tags: [{ key: 'Name', value: ContextHelper.get(this, 'resourceName', 'dsql') }],
     });
-    this.cluster.applyRemovalPolicy(isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY);
+    this.cluster.applyRemovalPolicy(
+      GDSEnv.isProd() || GDSEnv.isStage() ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+    );
 
     // PrivateLink hostname: <cluster-id>.<service-suffix>.<region>.on.aws,
     // where the suffix is the last part of the endpoint service name
@@ -128,7 +129,7 @@ export class DataStack extends cdk.Stack {
     );
     this.clientSecurityGroup.addEgressRule(
       ec2.Peer.securityGroupId(endpointSecurityGroup.securityGroupId),
-      ec2.Port.tcp(DSQL_PORT),
+      ec2.Port.tcp(NetworkSecurityContstants.DSQL_PORT),
       'DSQL clients to the shared DSQL endpoint',
     );
 

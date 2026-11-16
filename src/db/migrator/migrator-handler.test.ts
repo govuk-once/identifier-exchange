@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { describeErrorChain } from './handler.js';
+import { describeErrorChain } from './migrator-handler.js';
 
 describe('describeErrorChain', () => {
   test('includes every cause, with error codes', () => {

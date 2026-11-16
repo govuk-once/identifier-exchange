@@ -8,6 +8,8 @@ import * as ssm from 'aws-cdk-lib/aws-ssm';
 import type { Construct } from 'constructs';
 import { ContextHelper } from '../utils/context-helper.js';
 import { SharedResources } from '../utils/shared-resources.js';
+import { GDSEnv } from '@govuk-connect/dev';
+import { NetworkSecurityContstants } from '../constants/network-security.const.js';
 
 // TODO(network engineer sign-off): the CIDR, AZ count and subnet mask are very
 // hard to change once deployed. Confirm before the first deploy to any account.
@@ -21,9 +23,6 @@ export const ISOLATED_SUBNET_GROUP = 'IsolatedPrivate';
 
 /** Matches the rotation period on UDP's keys. */
 export const KEY_ROTATION_PERIOD = cdk.Duration.days(90);
-
-/** PostgreSQL wire protocol port that the DSQL endpoint listens on. */
-export const DSQL_PORT = 5432;
 
 /**
  * Aurora DSQL's PrivateLink endpoint service. There is one per Region, shared
@@ -188,14 +187,14 @@ export class NetworkSecurityStack extends cdk.Stack {
    * IAM (the default key policy delegates to the account).
    */
   private createKey(id: string, name: string, purpose: string): kms.Key {
-    const isProd = ContextHelper.get(this, 'isProd');
     return new kms.Key(this, id, {
       alias: `${ContextHelper.get(this, 'sharedPrefix')}-${name}`,
       description: `${purpose} - ${ContextHelper.get(this, 'sharedPrefix')}`,
       enableKeyRotation: true,
       rotationPeriod: KEY_ROTATION_PERIOD,
       pendingWindow: cdk.Duration.days(30),
-      removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+      removalPolicy:
+        GDSEnv.isProd() || GDSEnv.isStage() ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
     });
   }
 
@@ -317,12 +316,15 @@ export class NetworkSecurityStack extends cdk.Stack {
     });
     securityGroup.addIngressRule(
       ec2.Peer.ipv4(VPC_CIDR),
-      ec2.Port.tcp(DSQL_PORT),
+      ec2.Port.tcp(NetworkSecurityContstants.DSQL_PORT),
       'PostgreSQL from inside the VPC',
     );
 
     const endpoint = this.vpc.addInterfaceEndpoint('DsqlDataEndpoint', {
-      service: new ec2.InterfaceVpcEndpointService(serviceName, DSQL_PORT),
+      service: new ec2.InterfaceVpcEndpointService(
+        serviceName,
+        NetworkSecurityContstants.DSQL_PORT,
+      ),
       subnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
       privateDnsEnabled: true,
       securityGroups: [securityGroup],

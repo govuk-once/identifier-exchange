@@ -1,6 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
 import { describe, expect, test } from 'vitest';
-
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { DataMigratorStack } from './data-migrator-stack.js';
 import { ContextHelper } from '../utils/context-helper.js';

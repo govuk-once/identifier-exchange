@@ -17,6 +17,7 @@ pr:
     environment: ephemeral # holds the dev account DEPLOYMENT_ROLE
     env:
       DEVELOPER_ID: 'pr-{pr}'
+      NODE_ENV: development
     deploy: pnpm run deploy:main
     destroy: pnpm run destroy:main
 
@@ -24,9 +25,6 @@ quality:
   aws: true # cdk synth for checkov
   nx: false
   environment: ephemeral
-  env:
-    DEVELOPER_ID: 'pr-{pr}'
-    NODE_ENV: development
   setup: python3 -m pip install semgrep pre-commit checkov
   checks:
     - name: Hygiene

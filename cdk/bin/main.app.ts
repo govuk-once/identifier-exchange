@@ -20,6 +20,8 @@ const prNumber =
 const developerId = process.env['DEVELOPER_ID'] || (prNumber ? `pr-${prNumber}` : undefined);
 const environment = enviromentFromProcess();
 
+process.env['ENVIRONMENT'] ??= environment;
+
 const app = new cdk.App();
 ContextHelper.setAll(app, {
   environment,

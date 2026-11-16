@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import {
@@ -16,6 +16,8 @@ import { NetworkSecurityContstants } from '../constants/network-security.const.j
 const synth = (environment: GDSEnvironment = GDSEnv.DEVELOPMENT) => {
   const app = new cdk.App();
   ContextHelper.setAll(app, { environment, appName: 'identifier-exchange' });
+  vi.spyOn(GDSEnv, 'isProd').mockReturnValue(environment === GDSEnv.PRODUCTION);
+  vi.spyOn(GDSEnv, 'isStage').mockReturnValue(environment === GDSEnv.STAGING);
   const stack = new NetworkSecurityStack(app, 'TestNetworkSecurityStack', { env: TEST_ENV });
   return { stack, template: Template.fromStack(stack) };
 };

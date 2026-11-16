@@ -93,7 +93,7 @@ export class DataMigratorStack extends cdk.Stack {
     this.migrator = new nodejs.NodejsFunction(this, 'Migrator', {
       functionName,
       description: 'Applies Aurora DSQL schema migrations',
-      entry: path.join(REPO_ROOT, 'src', 'db', 'migrator', 'migrator.handler.ts'),
+      entry: path.join(REPO_ROOT, 'src', 'db', 'migrator', 'migrator-handler.ts'),
       projectRoot: REPO_ROOT,
       depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
       runtime: lambda.Runtime.NODEJS_24_X,

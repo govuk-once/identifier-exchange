@@ -1,12 +1,12 @@
 import * as cdk from 'aws-cdk-lib';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { DataMigratorStack } from './data-migrator-stack.js';
 import { ContextHelper } from '../utils/context-helper.js';
-import { GDSEnv } from '@govuk-connect/dev';
+import { GDSEnv, type GDSEnvironment } from '@govuk-connect/dev';
 import { TEST_ENV, sharedSubnetIds, sharedVpcId, ssmRef } from '../testing/helpers.js';
 
-const synth = (developerId?: string) => {
+const synth = (environment: GDSEnvironment = GDSEnv.DEVELOPMENT, developerId?: string) => {
   // Skip esbuild bundling: these tests assert on the template, not the bundle.
   const app = new cdk.App({ context: { 'aws:cdk:bundling-stacks': [] } });
   ContextHelper.setAll(app, {
@@ -14,6 +14,8 @@ const synth = (developerId?: string) => {
     appName: 'identifier-exchange',
     developerId,
   });
+  vi.spyOn(GDSEnv, 'isProd').mockReturnValue(environment === GDSEnv.PRODUCTION);
+  vi.spyOn(GDSEnv, 'isStage').mockReturnValue(environment === GDSEnv.STAGING);
   const stack = new DataMigratorStack(app, 'TestDataMigratorStack', { env: TEST_ENV });
   return { app, stack, template: Template.fromStack(stack) };
 };
@@ -41,7 +43,7 @@ const migratorFunction = (template: Template) => {
 
 describe('Data Migrator Stack', () => {
   test('an isolated (PR) deployment names everything with the developer ID', () => {
-    const { template } = synth('pr-123');
+    const { template } = synth(GDSEnv.DEVELOPMENT, 'pr-123');
 
     template.hasResourceProperties('AWS::Lambda::Function', {
       FunctionName: 'pr-123-identifier-exchange-data-migrator',

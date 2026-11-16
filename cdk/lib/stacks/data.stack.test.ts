@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { DataStack } from './data.stack.js';
@@ -11,6 +11,8 @@ import { NetworkSecurityContstants } from '../constants/network-security.const.j
 const synth = (environment: GDSEnvironment = GDSEnv.DEVELOPMENT, developerId?: string) => {
   const app = new cdk.App();
   ContextHelper.setAll(app, { environment, appName: 'identifier-exchange', developerId });
+  vi.spyOn(GDSEnv, 'isProd').mockReturnValue(environment === GDSEnv.PRODUCTION);
+  vi.spyOn(GDSEnv, 'isStage').mockReturnValue(environment === GDSEnv.STAGING);
   const dataStack = new DataStack(app, 'TestDataStack', { env: TEST_ENV });
   return { app, dataStack, template: Template.fromStack(dataStack) };
 };

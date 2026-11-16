@@ -1,5 +1,5 @@
 {
-  "app": "node bin/main.app.ts",
+  "app": "tsx bin/main.app.ts",
   "watch": {
     "include": ["**"],
     "exclude": [

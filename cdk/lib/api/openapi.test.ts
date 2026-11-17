@@ -10,7 +10,10 @@ const OPTIONS = { title: 'Test API', version: 'v1', stageName: 'v1' };
 
 describe('docs/openapi.json', () => {
   test('matches the current route definitions (run `pnpm export:openapi`)', () => {
-    expect(readFileSync(OPENAPI_SPEC_PATH, 'utf8')).toBe(serialiseOpenApiSpec(exchangeApiSpec()));
+    // Compared as parsed JSON, so a formatter reflowing the file (short arrays
+    // onto one line) does not count as drift; only content changes do.
+    const committed: unknown = JSON.parse(readFileSync(OPENAPI_SPEC_PATH, 'utf8'));
+    expect(committed).toEqual(JSON.parse(serialiseOpenApiSpec(exchangeApiSpec())));
   });
 
   test('documents every deployed route', () => {

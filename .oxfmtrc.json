@@ -16,6 +16,7 @@
     "node_modules/**",
     "cdk.out/**",
     "coverage/**",
-    ".pre-commit-config.yaml"
+    ".pre-commit-config.yaml",
+    "docs/openapi.json"
   ]
 }

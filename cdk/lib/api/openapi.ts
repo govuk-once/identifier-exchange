@@ -83,7 +83,7 @@ export const buildOpenApiSpec = (
   options: OpenApiOptions,
 ): OpenApiSpec => {
   const paths: OpenApiSpec['paths'] = {};
-  for (const route of [...routes].sort((a, b) => a.path.localeCompare(b.path))) {
+  for (const route of routes.toSorted((a, b) => a.path.localeCompare(b.path))) {
     const methods = (paths[route.path] ??= {});
     const method = route.method.toLowerCase();
     if (methods[method]) {
@@ -93,7 +93,7 @@ export const buildOpenApiSpec = (
   }
   for (const [pathName, methods] of Object.entries(paths)) {
     paths[pathName] = Object.fromEntries(
-      Object.entries(methods).sort(([a], [b]) => a.localeCompare(b)),
+      Object.entries(methods).toSorted(([a], [b]) => a.localeCompare(b)),
     );
   }
 

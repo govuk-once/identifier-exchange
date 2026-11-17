@@ -27,7 +27,7 @@ const modelPrefix = (operationId: string) => {
 
 /** `{id}` / `{proxy+}` segments of an API Gateway path. */
 const pathParameterNames = (path: string) =>
-  [...path.matchAll(/\{([^}+]+)\+?\}/g)].map(([, name]) => name!);
+  [...path.matchAll(/\{([^}+]+)\+?\}/g)].flatMap(([, name]) => (name ? [name] : []));
 
 /**
  * `method.request.<location>.<name>: required` for API Gateway. Path

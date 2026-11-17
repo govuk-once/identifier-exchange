@@ -28,8 +28,10 @@
     "@govuk-connect/tag": "^1.0.0",
     "aws-cdk-lib": "2.265.0",
     "constructs": "10.8.1",
+    "conventional-changelog-conventionalcommits": "10.2.1",
     "drizzle-orm": "0.45.4",
-    "pg": "8.23.1"
+    "pg": "8.23.1",
+    "semantic-release": "25.0.8"
   },
   "devDependencies": {
     "@esbuild/linux-x64": "0.28.2",

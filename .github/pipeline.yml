@@ -36,4 +36,4 @@ quality:
 
 environments:
   - name: development
-    deploy: pnpm run cdk:main
+    deploy: pnpm run deploy:main

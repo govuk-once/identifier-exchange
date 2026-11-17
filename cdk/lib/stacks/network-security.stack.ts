@@ -81,6 +81,11 @@ export class NetworkSecurityStack extends cdk.Stack {
   public readonly endpointSecurityGroup: ec2.SecurityGroup;
   /** Shared DSQL data-plane endpoint for every cluster's connections. */
   public readonly dsqlEndpoint: ec2.InterfaceVpcEndpoint;
+  /**
+   * The only way into the private Exchange API: its resource policy rejects
+   * requests that do not arrive through this endpoint.
+   */
+  public readonly executeApiEndpoint: ec2.InterfaceVpcEndpoint;
   public readonly dsqlEndpointSecurityGroup: ec2.SecurityGroup;
   public readonly signingProfile: signer.SigningProfile;
   public readonly codeSigningConfig: lambda.CodeSigningConfig;
@@ -107,6 +112,7 @@ export class NetworkSecurityStack extends cdk.Stack {
 
     this.networkAcl = this.createZeroEgressNacl();
     this.endpointSecurityGroup = this.createEndpoints();
+    this.executeApiEndpoint = this.createExecuteApiEndpoint();
     [this.dsqlEndpoint, this.dsqlEndpointSecurityGroup] = this.createDsqlEndpoint();
 
     this.signingProfile = new signer.SigningProfile(this, 'SigningProfile', {
@@ -150,6 +156,11 @@ export class NetworkSecurityStack extends cdk.Stack {
           ',',
           isolatedSubnets.map((s) => s.availabilityZone),
         ),
+      ],
+      [
+        'ExecuteApiEndpointIdParameter',
+        SharedResources.executeApiEndpointIdParameter(this),
+        this.executeApiEndpoint.vpcEndpointId,
       ],
       [
         'DsqlEndpointSecurityGroupIdParameter',
@@ -255,6 +266,22 @@ export class NetworkSecurityStack extends cdk.Stack {
   }
 
   /** PrivateLink endpoints for AWS APIs, plus the S3 gateway endpoint. */
+  /**
+   * Interface endpoint for API Gateway private APIs. Private DNS makes
+   * `<api-id>.execute-api.<region>.amazonaws.com` resolve to it from inside
+   * the VPC (there is no route to public APIs anyway). HTTPS from the VPC only,
+   * through the shared endpoint security group.
+   */
+  private createExecuteApiEndpoint(): ec2.InterfaceVpcEndpoint {
+    return this.vpc.addInterfaceEndpoint('ExecuteApiEndpoint', {
+      service: ec2.InterfaceVpcEndpointAwsService.APIGATEWAY,
+      subnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
+      privateDnsEnabled: true,
+      securityGroups: [this.endpointSecurityGroup],
+      open: false,
+    });
+  }
+
   private createEndpoints(): ec2.SecurityGroup {
     const subnets: ec2.SubnetSelection = { subnetType: ec2.SubnetType.PRIVATE_ISOLATED };
 

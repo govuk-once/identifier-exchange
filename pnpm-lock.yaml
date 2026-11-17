@@ -193,13 +193,16 @@ importers:
       semantic-release:
         specifier: 25.0.8
         version: 25.0.8(supports-color@7.2.0)(typescript@7.0.2)
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
     devDependencies:
       '@esbuild/linux-x64':
         specifier: 0.28.2
         version: 0.28.2
       '@govuk-connect/dev':
         specifier: 0.0.16
-        version: 0.0.16(@types/node@24.13.3)(oxlint-tsgolint@7.0.2001)(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(yaml@2.9.0))
+        version: 0.0.16(@types/node@24.13.3)(oxlint-tsgolint@7.0.2001)(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12)(yaml@2.9.0))
       '@types/node':
         specifier: 24.13.3
         version: 24.13.3
@@ -221,9 +224,12 @@ importers:
       oxlint-tsgolint:
         specifier: 7.0.2001
         version: 7.0.2001
+      tsx:
+        specifier: 4.23.12
+        version: 4.23.12
       vitest:
         specifier: 4.1.10
-        version: 4.1.10(@types/node@24.13.3)(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(yaml@2.9.0))
+        version: 4.1.10(@types/node@24.13.3)(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12)(yaml@2.9.0))
 
   src:
     dependencies:
@@ -861,7 +867,7 @@ packages:
     os: [win32]
 
   '@govuk-connect/dev@0.0.16':
-    resolution: {integrity: sha512-CBQPVmNu9jRjSao5aMDvZOER09iHerLvF794nRVKwvTuZrUpbgRB6G2Qh8vwmG3uYyc4IWCXRQuJ9k9Aoxi0Jg==, tarball: https://registry-prod-904690835784.d.codeartifact.eu-west-2.amazonaws.com/npm/registry-prod-repo/@govuk-connect/dev/-/dev-0.0.16.tgz}
+    resolution: {integrity: sha512-CBQPVmNu9jRjSao5aMDvZOER09iHerLvF794nRVKwvTuZrUpbgRB6G2Qh8vwmG3uYyc4IWCXRQuJ9k9Aoxi0Jg==}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -2975,6 +2981,11 @@ packages:
   tslib@2.9.1:
     resolution: {integrity: sha512-a4Ux9VKuIMHsOS7ENbEq6hK2ZGYIT27Rtl0E4eD9KqwxhKiQeMZE/9xb3IdYwWaSOyIBQLExhQgXDTYoiCxnWA==}
 
+  tsx@4.23.12:
+    resolution: {integrity: sha512-FDf4L4sYzKtzWYhU/Xm0AQFdTjdIxNo9ElTf2mxXM6k8YMHXzYUe4yODVaXP4V9uMFbVg8c0qyBccK2OOxb45Q==}
+    engines: {node: '>=18.0.0'}
+    hasBin: true
+
   tunnel@0.0.6:
     resolution: {integrity: sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg==}
     engines: {node: '>=0.6.11 <=0.7.0 || >=0.7.3'}
@@ -3203,6 +3214,9 @@ packages:
   yoctocolors@2.2.0:
     resolution: {integrity: sha512-xYqdZFUK/VYazNl/oCDYN+3WloWQwMfZxBoiNt6qNyk+xfOdi598muWE42rNZFp1kNOiqW936q5RhUdnpqElSg==}
     engines: {node: '>=18'}
+
+  zod@4.6.5:
+    resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
 
 snapshots:
 
@@ -3835,7 +3849,7 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
-  '@govuk-connect/dev@0.0.16(@types/node@24.13.3)(oxlint-tsgolint@7.0.2001)(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(yaml@2.9.0))':
+  '@govuk-connect/dev@0.0.16(@types/node@24.13.3)(oxlint-tsgolint@7.0.2001)(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12)(yaml@2.9.0))':
     dependencies:
       '@aws-sdk/client-dynamodb': 3.1161.0
       '@aws-sdk/client-kms': 3.1161.0
@@ -3850,7 +3864,7 @@ snapshots:
       oxlint: 1.78.0(oxlint-tsgolint@7.0.2001)
       pg: 8.23.1
       typescript: 7.0.2
-      vitest: 4.1.10(@types/node@24.13.3)(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(yaml@2.9.0))
+      vitest: 4.1.10(@types/node@24.13.3)(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12)(yaml@2.9.0))
       yaml: 2.9.0
     transitivePeerDependencies:
       - '@edge-runtime/vm'
@@ -4345,13 +4359,13 @@ snapshots:
       chai: 6.3.0
       tinyrainbow: 3.2.0
 
-  '@vitest/mocker@4.1.10(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(yaml@2.9.0))':
+  '@vitest/mocker@4.1.10(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12)(yaml@2.9.0))':
     dependencies:
       '@vitest/spy': 4.1.10
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(yaml@2.9.0)
+      vite: 8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12)(yaml@2.9.0)
 
   '@vitest/pretty-format@4.1.10':
     dependencies:
@@ -5635,6 +5649,12 @@ snapshots:
 
   tslib@2.9.1: {}
 
+  tsx@4.23.12:
+    dependencies:
+      esbuild: 0.28.2
+    optionalDependencies:
+      fsevents: 2.3.3
+
   tunnel@0.0.6: {}
 
   type-fest@1.4.0: {}
@@ -5704,7 +5724,7 @@ snapshots:
       spdx-correct: 3.2.0
       spdx-expression-parse: 3.0.1
 
-  vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(yaml@2.9.0):
+  vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12)(yaml@2.9.0):
     dependencies:
       lightningcss: 1.33.0
       picomatch: 4.0.7
@@ -5715,12 +5735,13 @@ snapshots:
       '@types/node': 24.13.3
       esbuild: 0.28.2
       fsevents: 2.3.3
+      tsx: 4.23.12
       yaml: 2.9.0
 
-  vitest@4.1.10(@types/node@24.13.3)(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(yaml@2.9.0)):
+  vitest@4.1.10(@types/node@24.13.3)(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12)(yaml@2.9.0)):
     dependencies:
       '@vitest/expect': 4.1.10
-      '@vitest/mocker': 4.1.10(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(yaml@2.9.0))
+      '@vitest/mocker': 4.1.10(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12)(yaml@2.9.0))
       '@vitest/pretty-format': 4.1.10
       '@vitest/runner': 4.1.10
       '@vitest/snapshot': 4.1.10
@@ -5737,7 +5758,7 @@ snapshots:
       tinyexec: 1.3.1
       tinyglobby: 0.2.17
       tinyrainbow: 3.2.0
-      vite: 8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(yaml@2.9.0)
+      vite: 8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12)(yaml@2.9.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 24.13.3
@@ -5805,3 +5826,5 @@ snapshots:
       yargs-parser: 22.0.0
 
   yoctocolors@2.2.0: {}
+
+  zod@4.6.5: {}

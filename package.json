@@ -21,7 +21,8 @@
     "deploy:decoupled": "npm run cdk:decoupled -- deploy --all --require-approval never",
     "destroy:decoupled": "npm run cdk:decoupled -- destroy --all --force",
     "test": "vitest .",
-    "migration:create": "node src/db/migrator/create-migration.ts"
+    "migration:create": "node src/db/migrator/create-migration.ts",
+    "export:openapi": "tsx scripts/export-openapi.ts"
   },
   "dependencies": {
     "@aws-lambda-powertools/logger": "^2.36.0",
@@ -32,7 +33,8 @@
     "conventional-changelog-conventionalcommits": "10.2.1",
     "drizzle-orm": "0.45.4",
     "pg": "8.23.1",
-    "semantic-release": "25.0.8"
+    "semantic-release": "25.0.8",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@esbuild/linux-x64": "0.28.2",
@@ -44,6 +46,7 @@
     "oxfmt": "0.63.0",
     "oxlint": "1.78.0",
     "oxlint-tsgolint": "7.0.2001",
+    "tsx": "4.23.12",
     "vitest": "4.1.10"
   },
   "engines": {

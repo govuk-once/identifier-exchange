@@ -119,7 +119,7 @@ describe('Network Security Stack', () => {
   });
 
   describe('VPC endpoints', () => {
-    test.each(['kms', 'logs', 'secretsmanager', 'dsql'])(
+    test.each(['kms', 'logs', 'secretsmanager', 'dsql', 'execute-api'])(
       'has a private-DNS interface endpoint for %s in the isolated subnets',
       (service) => {
         const { template } = synth();
@@ -151,7 +151,7 @@ describe('Network Security Stack', () => {
     test('creates no other endpoints', () => {
       const { template } = synth();
 
-      template.resourceCountIs('AWS::EC2::VPCEndpoint', 6);
+      template.resourceCountIs('AWS::EC2::VPCEndpoint', 7);
     });
 
     test('has the one DSQL data-plane endpoint that every cluster in the VPC shares', () => {
@@ -263,6 +263,15 @@ describe('Network Security Stack', () => {
     template.hasResourceProperties('AWS::SSM::Parameter', {
       Name: '/development-identifier-exchange/network/availability-zones',
       Value: Match.anyValue(),
+    });
+  });
+
+  test('publishes the execute-api endpoint for the private Exchange API', () => {
+    const { template } = synth();
+
+    template.hasResourceProperties('AWS::SSM::Parameter', {
+      Name: '/development-identifier-exchange/network/execute-api-endpoint-id',
+      Value: { Ref: Match.stringLikeRegexp('^VpcExecuteApiEndpoint') },
     });
   });
 

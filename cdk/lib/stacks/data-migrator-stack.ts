@@ -30,7 +30,8 @@ const MIGRATION_TIMEOUT = cdk.Duration.minutes(10);
  *
  * Also owns the IAM roles that the migrations map to the `readonly_role` and
  * `readwrite_role` database roles. Application workloads use these roles
- * (looked up from SSM) to connect with `dsql:DbConnect`.
+ * (looked up from SSM) to connect with `dsql:DbConnect`, and to encrypt and
+ * decrypt fields with the shared data encryption key.
  *
  * Shared resources are looked up rather than passed in (see SharedResources),
  * so VpcStack and DataStack must be deployed first.
@@ -56,6 +57,13 @@ export class DataMigratorStack extends cdk.Stack {
       'DsqlEncryptionKey',
       lookup(SharedResources.dsqlEncryptionKeyArnParameter(this)),
     );
+    // Application-level field encryption (envelope encryption with
+    // GenerateDataKey, or Encrypt/Decrypt directly) by workloads using the roles.
+    const dataEncryptionKey = kms.Key.fromKeyArn(
+      this,
+      'DataEncryptionKey',
+      lookup(SharedResources.dataEncryptionKeyArnParameter(this)),
+    );
     const dsqlClientSecurityGroup = ec2.SecurityGroup.fromSecurityGroupId(
       this,
       'DsqlClientSecurityGroup',
@@ -71,11 +79,20 @@ export class DataMigratorStack extends cdk.Stack {
           new iam.ServicePrincipal('lambda.amazonaws.com'),
           new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
         ),
+        // Lambda functions using the role run in the VPC (ExchangeApiStack) and
+        // need to manage their ENIs and write logs.
+        managedPolicies: [
+          iam.ManagedPolicy.fromAwsManagedPolicyName(
+            'service-role/AWSLambdaVPCAccessExecutionRole',
+          ),
+        ],
       });
       role.addToPolicy(
         new iam.PolicyStatement({ actions: ['dsql:DbConnect'], resources: [clusterArn] }),
       );
       dsqlEncryptionKey.grantDecrypt(role);
+      // Encrypt, Decrypt, ReEncrypt* and GenerateDataKey* on this key only.
+      dataEncryptionKey.grantEncryptDecrypt(role);
       return role;
     };
     this.readOnlyRole = workloadRole(

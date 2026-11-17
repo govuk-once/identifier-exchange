@@ -25,6 +25,9 @@ export const SharedResources = {
     `/${ContextHelper.get(scope, 'sharedPrefix')}/network/availability-zones`,
 
   // SSM parameters published by NetworkSecurityStack.
+  /** execute-api interface endpoint; the private Exchange API admits only this (and listed consumers). */
+  executeApiEndpointIdParameter: (scope: Construct): string =>
+    `/${ContextHelper.get(scope, 'sharedPrefix')}/network/execute-api-endpoint-id`,
   /** Security group on the shared DSQL endpoint; clients allow egress to it. */
   dsqlEndpointSecurityGroupIdParameter: (scope: Construct): string =>
     `/${ContextHelper.get(scope, 'sharedPrefix')}/dsql/endpoint-security-group-id`,

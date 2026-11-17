@@ -19,7 +19,7 @@ pr:
       DEVELOPER_ID: 'pr-{pr}'
       NODE_ENV: development
     deploy: pnpm run deploy:main
-    destroy: pnpm run destroy:main
+    destroy: pnpm run destroy:ephemeral
 
 quality:
   aws: true # cdk synth for checkov

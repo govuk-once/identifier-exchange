@@ -24,6 +24,7 @@ const CLUSTER_ARN = '/development-identifier-exchange/dsql/cluster-arn';
 const CLUSTER_ENDPOINT = '/development-identifier-exchange/dsql/cluster-endpoint';
 const CLIENT_SG = '/development-identifier-exchange/dsql/client-security-group-id';
 const DSQL_KEY = '/development-identifier-exchange/kms/dsql-encryption-key-arn';
+const DATA_KEY = '/development-identifier-exchange/kms/data-encryption-key-arn';
 
 /** DSQL refuses connections unless the principal can decrypt with the cluster's key. */
 const decryptDsqlKey = (template: Template) => ({
@@ -128,7 +129,7 @@ describe('Data Migrator Stack', () => {
     ['ReadOnlyDbRole', 'development-identifier-exchange-dsql-readonly'],
     ['ReadWriteDbRole', 'development-identifier-exchange-dsql-readwrite'],
   ])(
-    '%s can connect and decrypt with the cluster key, but not as admin',
+    '%s can connect, decrypt with the cluster key and use the data key, but not as admin',
     (logicalPrefix, roleName) => {
       const { template } = synth();
 
@@ -140,6 +141,15 @@ describe('Data Migrator Stack', () => {
             Match.objectLike({ Principal: { Service: 'ecs-tasks.amazonaws.com' } }),
           ],
         },
+        // ExchangeApiStack runs VPC Lambda functions as these roles.
+        ManagedPolicyArns: [
+          {
+            'Fn::Join': [
+              '',
+              Match.arrayWith([':iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole']),
+            ],
+          },
+        ],
       });
       template.hasResourceProperties('AWS::IAM::Policy', {
         Roles: [{ Ref: Match.stringLikeRegexp(`^${logicalPrefix}`) }],
@@ -147,6 +157,11 @@ describe('Data Migrator Stack', () => {
           Statement: [
             { Action: 'dsql:DbConnect', Effect: 'Allow', Resource: ssmRef(template, CLUSTER_ARN) },
             decryptDsqlKey(template),
+            {
+              Action: ['kms:Decrypt', 'kms:Encrypt', 'kms:ReEncrypt*', 'kms:GenerateDataKey*'],
+              Effect: 'Allow',
+              Resource: ssmRef(template, DATA_KEY),
+            },
           ],
         },
       });

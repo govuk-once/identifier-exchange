@@ -2,7 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import { ContextHelper, enviromentFromProcess } from '../lib/utils/context-helper.js';
 import { NetworkSecurityStack } from '../lib/stacks/network-security.stack.js';
 import { DataStack } from '../lib/stacks/data.stack.js';
-// import { ExchangeApiStack } from '../lib/stacks/exchange-api.stack';
+import { ExchangeApiStack } from '../lib/stacks/exchange-api.stack.js';
 import { DataMigratorStack } from '../lib/stacks/data-migrator-stack.js';
 
 /**
@@ -56,7 +56,9 @@ const network = new NetworkSecurityStack(app, 'NetworkSecurityStack', {
 const data = new DataStack(app, 'DataStack', stackProps('data-stack'));
 const migrator = new DataMigratorStack(app, 'DataMigratorStack', stackProps('data-migrator-stack'));
 
+const exchangeApi = new ExchangeApiStack(app, 'ExchangeApiStack', stackProps('exchange-api-stack'));
+
 data.addStackDependency(network);
 migrator.addStackDependency(data);
-
-// new ExchangeApiStack(app, 'ExchangeApiStack', stackProps('exchange-api-stack'));
+// Runs as the database roles DataMigratorStack owns.
+exchangeApi.addStackDependency(migrator);

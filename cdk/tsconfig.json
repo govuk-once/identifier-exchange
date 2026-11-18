@@ -6,7 +6,7 @@
     // The CDK app is executed, never compiled: `cdk synth` runs bin/app.ts
     // through Node's type stripping, so there is no dist output to produce.
     "noEmit": true,
-    "rootDir": ".",
+    "rootDir": "..",
     "types": ["node", "vitest/globals"],
 
     "module": "preserve",

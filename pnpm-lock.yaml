@@ -201,8 +201,8 @@ importers:
         specifier: 0.28.2
         version: 0.28.2
       '@govuk-connect/dev':
-        specifier: 0.0.16
-        version: 0.0.16(@types/node@24.13.3)(oxlint-tsgolint@7.0.2001)(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12)(yaml@2.9.0))
+        specifier: 0.0.18
+        version: 0.0.18(@types/node@24.13.3)(oxlint-tsgolint@7.0.2001)(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12)(yaml@2.9.0))
       '@types/node':
         specifier: 24.13.3
         version: 24.13.3
@@ -866,8 +866,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@govuk-connect/dev@0.0.16':
-    resolution: {integrity: sha512-CBQPVmNu9jRjSao5aMDvZOER09iHerLvF794nRVKwvTuZrUpbgRB6G2Qh8vwmG3uYyc4IWCXRQuJ9k9Aoxi0Jg==}
+  '@govuk-connect/dev@0.0.18':
+    resolution: {integrity: sha512-9FwDzuPjlRE+ZjRmTY9eeTlw+gaW/qufQdkDDbGTLc6Jwcg/LW8Z6WYZhMGiU7Lh1nhO7tKGfogKNmJv83iGNA==, tarball: https://registry-prod-904690835784.d.codeartifact.eu-west-2.amazonaws.com/npm/registry-prod-repo/@govuk-connect/dev/-/dev-0.0.18.tgz}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -3849,7 +3849,7 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
-  '@govuk-connect/dev@0.0.16(@types/node@24.13.3)(oxlint-tsgolint@7.0.2001)(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12)(yaml@2.9.0))':
+  '@govuk-connect/dev@0.0.18(@types/node@24.13.3)(oxlint-tsgolint@7.0.2001)(vite@8.3.6(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12)(yaml@2.9.0))':
     dependencies:
       '@aws-sdk/client-dynamodb': 3.1161.0
       '@aws-sdk/client-kms': 3.1161.0

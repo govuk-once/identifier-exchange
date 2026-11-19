@@ -2,7 +2,8 @@
 #
 # Rendered by `dev sync` from platform-pkg-dev's master config. Edits here are
 # overwritten on the next sync. To add hooks for this package only, put them in
-# pre-commit.extend.yaml; they are appended to the list below.
+# pre-commit.extend.yaml; their repos run before dev-format and dev-lint below,
+# so anything they generate is formatted and linted in the same commit.
 #
 # Revisions are pinned in platform-pkg-dev's versions.json. Do not run
 # `pre-commit autoupdate` - it moves the revs off those pins. Bump the version
@@ -82,19 +83,19 @@ repos:
           - --exclude-lines
           - '("detect-secrets":|["'']?TOP_SECRET["'']?\s*[:=]\s*["'']TOP_SECRET)'
 
-  # Spell checker for code and documentation.
-  - repo: https://github.com/streetsidesoftware/cspell-cli
-    rev: 'v10.2.0'
-    hooks:
-      - id: cspell
-        args: [--no-exit-code]
-        verbose: true
-        # Optional: uncomment to specify a custom config file path
-        # args: [--config, .cspell.json]
+  # # Spell checker for code and documentation.
+  # - repo: https://github.com/streetsidesoftware/cspell-cli
+  #   rev: 'v10.2.0'
+  #   hooks:
+  #     - id: cspell
+  #       args: [--no-exit-code]
+  #       verbose: true
+  #       # Optional: uncomment to specify a custom config file path
+  #       # args: [--config, .cspell.json]
 
-        # semgrep runs on push, not commit: a full ruleset scan is too slow to sit in
-        # front of every commit. detect-secrets stays on commit because it is fast and
-        # a leaked credential must never reach a commit at all.
+  # semgrep runs on push, not commit: a full ruleset scan is too slow to sit in
+  # front of every commit. detect-secrets stays on commit because it is fast and
+  # a leaked credential must never reach a commit at all.
   - repo: https://github.com/semgrep/semgrep
     rev: 'v1.174.0'
     hooks:
@@ -119,6 +120,14 @@ repos:
     rev: 'v1.7.12'
     hooks:
       - id: actionlint
+  - repo: local
+    hooks:
+      - id: export-open-api
+        name: Run local export-openapi.sh
+        entry: scripts/export-openapi.sh
+        language: script
+        pass_filenames: false
+        verbose: true
 
   # The Connect toolchain. These call the `dev` CLI, so they always use the
   # TypeScript, Vitest and oxlint versions platform-pkg-dev pins.

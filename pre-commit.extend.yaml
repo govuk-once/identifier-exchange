@@ -27,10 +27,22 @@
 #   args:
 #     - --config=p/owasp-top-ten
 
-# A `repos:` key adds entirely new hook repos for this package only.
+# A `repos:` key adds entirely new hook repos for this package only. They run
+# before dev-format and dev-lint, so files they generate are formatted and
+# linted in the same commit.
 #
 # repos:
 #   - repo: https://github.com/example/hooks
 #     rev: v1.0.0
 #     hooks:
 #       - id: example
+
+repos:
+  - repo: local
+    hooks:
+      - id: export-open-api
+        name: Run local export-openapi.sh
+        entry: scripts/export-openapi.sh
+        language: script
+        pass_filenames: false
+        verbose: true

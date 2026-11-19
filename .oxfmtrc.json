@@ -13,10 +13,10 @@
   "quoteProps": "as-needed",
   "ignorePatterns": [
     "dist/**",
+    "docs/**",
     "node_modules/**",
     "cdk.out/**",
     "coverage/**",
-    ".pre-commit-config.yaml",
-    "docs/openapi.json"
+    ".pre-commit-config.yaml"
   ]
 }

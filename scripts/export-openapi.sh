@@ -22,6 +22,7 @@ if [ "${CI:-}" != "true" ] && [ "${CI:-}" != "1" ]; then
   SOURCES='^(src/routes/|src/api/|cdk/lib/api/|scripts/export-openapi\.ts$|docs/openapi\.json$)'
 
   if ! git diff --cached --name-only --diff-filter=ACMRD | grep -Eq "$SOURCES"; then
+    echo "pre-commit: OpenAPI sources unchanged" >&2
     exit 0
   fi
 
@@ -32,5 +33,6 @@ if [ "${CI:-}" != "true" ] && [ "${CI:-}" != "1" ]; then
     echo "pre-commit: OpenAPI export failed; fix the route definitions above" >&2
     exit 1
   fi
+
   git add "$SPEC"
 fi

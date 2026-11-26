@@ -1,6 +1,7 @@
 import type { Migration } from '../migrator/types.js';
 import * as createInitialTables from './20261112100123_create_initial_tables.js';
 import * as grantUserPermissions from './20261112101658_grant_user_permissions.js';
+import * as createLinkedIdentifiers from './20261126141927_create_linked_identifiers.js';
 
 /**
  * Every migration, in the order it applies. The Lambda bundle can't scan this
@@ -12,4 +13,5 @@ import * as grantUserPermissions from './20261112101658_grant_user_permissions.j
 export const migrations: readonly Migration[] = [
   { name: '20261112100123_create_initial_tables', ...createInitialTables },
   { name: '20261112101658_grant_user_permissions', ...grantUserPermissions },
+  { name: '20261126141927_create_linked_identifiers', ...createLinkedIdentifiers },
 ];

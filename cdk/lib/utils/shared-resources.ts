@@ -59,6 +59,8 @@ export const SharedResources = {
     `/${ContextHelper.get(scope, 'prefix')}/dsql/read-only-role-arn`,
   dsqlReadWriteRoleArnParameter: (scope: Construct): string =>
     `/${ContextHelper.get(scope, 'prefix')}/dsql/read-write-role-arn`,
+  dsqlDeleteRoleArnParameter: (scope: Construct): string =>
+    `/${ContextHelper.get(scope, 'prefix')}/dsql/delete-role-arn`,
   migratorFunctionNameParameter: (scope: Construct): string =>
     `/${ContextHelper.get(scope, 'prefix')}/data-migrator/function-name`,
 };

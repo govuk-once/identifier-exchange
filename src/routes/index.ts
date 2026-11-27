@@ -1,4 +1,5 @@
 import type { RouteDefinition } from './define-route.js';
+import { exchangeIdentifierRoute } from './exchange-identifier.route.js';
 import { getItemRoute } from './get-item.route.js';
 import { linkIdentifierRoute } from './link-identifier/link-identifier.route.js';
 
@@ -13,4 +14,8 @@ import { linkIdentifierRoute } from './link-identifier/link-identifier.route.js'
  *   3. pnpm export:openapi
  * Nothing else depends on it; the CDK tests use their own fixture routes.
  */
-export const routes: readonly RouteDefinition[] = [getItemRoute, linkIdentifierRoute];
+export const routes: readonly RouteDefinition[] = [
+  getItemRoute,
+  linkIdentifierRoute,
+  exchangeIdentifierRoute,
+];

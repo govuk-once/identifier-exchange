@@ -86,11 +86,12 @@ export class DataMigratorStack extends cdk.Stack {
           new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
         ),
         // Lambda functions using the role run in the VPC (ExchangeApiStack) and
-        // need to manage their ENIs and write logs.
+        // need to manage their ENIs, write logs and send X-Ray traces.
         managedPolicies: [
           iam.ManagedPolicy.fromAwsManagedPolicyName(
             'service-role/AWSLambdaVPCAccessExecutionRole',
           ),
+          iam.ManagedPolicy.fromAwsManagedPolicyName('AWSXRayDaemonWriteAccess'),
         ],
       });
       role.addToPolicy(

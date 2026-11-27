@@ -187,6 +187,10 @@ export class ExchangeApiStack extends cdk.Stack {
         vpc,
         vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
         securityGroups: [dsqlClientSecurityGroup],
+        // createApiHandler adds a subsegment per invocation. The role's
+        // AWSXRayDaemonWriteAccess policy (DataMigratorStack) allows sending them,
+        // through NetworkSecurityStack's X-Ray endpoint (the subnets have no NAT).
+        tracing: lambda.Tracing.ACTIVE,
         environment: {
           CLUSTER_ENDPOINT: clusterEndpoint,
           DATA_ENCRYPTION_KEY_ARN: this.dataEncryptionKey.keyArn,

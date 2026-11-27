@@ -300,6 +300,8 @@ export class NetworkSecurityStack extends cdk.Stack {
       ['KmsEndpoint', ec2.InterfaceVpcEndpointAwsService.KMS],
       ['LogsEndpoint', ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS],
       ['SecretsManagerEndpoint', ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER],
+      // Traced Lambda functions (ExchangeApiStack) send their subsegments here.
+      ['XRayEndpoint', ec2.InterfaceVpcEndpointAwsService.XRAY],
       ['DsqlEndpoint', new ec2.InterfaceVpcEndpointAwsService('dsql')],
     ] as const) {
       this.vpc.addInterfaceEndpoint(endpointId, {

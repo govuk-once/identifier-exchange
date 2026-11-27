@@ -163,6 +163,7 @@ describe('Exchange Api Stack', () => {
     expect(fn).toMatchObject({
       Runtime: 'nodejs24.x',
       Architectures: ['arm64'],
+      TracingConfig: { Mode: 'Active' },
       VpcConfig: {
         SecurityGroupIds: [ssmRef(template, CLIENT_SG)],
         SubnetIds: sharedSubnetIds(template),

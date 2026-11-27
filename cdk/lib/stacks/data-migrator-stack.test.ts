@@ -143,13 +143,16 @@ describe('Data Migrator Stack', () => {
             Match.objectLike({ Principal: { Service: 'ecs-tasks.amazonaws.com' } }),
           ],
         },
-        // ExchangeApiStack runs VPC Lambda functions as these roles.
+        // ExchangeApiStack runs traced VPC Lambda functions as these roles.
         ManagedPolicyArns: [
           {
             'Fn::Join': [
               '',
               Match.arrayWith([':iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole']),
             ],
+          },
+          {
+            'Fn::Join': ['', Match.arrayWith([':iam::aws:policy/AWSXRayDaemonWriteAccess'])],
           },
         ],
       });

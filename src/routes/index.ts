@@ -1,6 +1,6 @@
 import type { RouteDefinition } from './define-route.js';
 import { getItemRoute } from './get-item.route.js';
-import { linkIdentifierRoute } from './link-identifier.route.js';
+import { linkIdentifierRoute } from './link-identifier/link-identifier.route.js';
 
 /**
  * Every route ExchangeApiStack exposes. Add new routes here.

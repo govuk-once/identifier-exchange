@@ -1,9 +1,9 @@
 import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import type * as KmsModule from '@aws-sdk/client-kms';
-import { apiErrorResponse } from '../api/errors.js';
-import type * as DsqlClientsModule from '../db/dsql-clients.js';
-import { linkedIdentifierResponse } from '../routes/link-identifier.route.js';
+import { apiErrorResponse } from '../../api/errors.js';
+import type * as DsqlClientsModule from '../../db/dsql-clients.js';
+import { linkedIdentifierResponse } from './link-identifier.route.js';
 
 const KEY_ARN = 'arn:aws:kms:eu-west-2:123456789012:key/11111111-2222-3333-4444-555555555555';
 const DOMAIN_ID = '3f2b8c1e-4d5a-4b6c-8d7e-9f0a1b2c3d4e';
@@ -48,7 +48,7 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock('../db/dsql-clients.js', async (importOriginal) => ({
+vi.mock('../../db/dsql-clients.js', async (importOriginal) => ({
   ...(await importOriginal<typeof DsqlClientsModule>()),
   createDsqlClients: mocks.createDsqlClients,
 }));
@@ -133,7 +133,7 @@ describe('linkIdentifier handler', () => {
   });
 
   test('refuses to link to IdX directly', async () => {
-    const result = await handler(event({ ...request, linkedDomain: 'IdX' }), lambdaContext);
+    const result = await handler(event({ ...request, linkedDomain: 'idx' }), lambdaContext);
 
     expect(result.statusCode).toBe(400);
     expect(parse(result)).toMatchObject({ details: [expect.stringMatching(/^linkedDomain:/)] });

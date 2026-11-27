@@ -17,7 +17,7 @@ describe('LINK_IDENTIFIER_SQL', () => {
     const sql = squash(LINK_IDENTIFIER_SQL);
     const indexes = squash(schema);
 
-    expect(sql).toContain("ON CONFLICT (domain, domain_id) WHERE linked_domain = 'IdX' DO NOTHING");
+    expect(sql).toContain("ON CONFLICT (domain, domain_id) WHERE linked_domain = 'idx' DO NOTHING");
     expect(indexes).toContain("(domain, domain_id) WHERE linked_domain = 'IdX'");
 
     const linkColumns =

@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { apiErrorResponse } from '../api/errors.js';
-import { IDX_DOMAIN } from '../db/linked-identifiers/linked-identifier.js';
-import { defineRoute } from './define-route.js';
+import { apiErrorResponse } from '../../api/errors.js';
+import { IDX_DOMAIN } from '../../db/linked-identifiers/linked-identifier.js';
+import { defineRoute } from './../define-route.js';
 
 // Anchor rows (linked_domain 'IdX') are only ever created by the link query.
 const notIdx = (field: string) =>
@@ -51,7 +51,7 @@ export const linkIdentifierRoute = defineRoute({
   path: '/link',
   summary: 'Link two identifiers, idempotently',
   handler: {
-    entry: 'src/handlers/link-identifier.handler.ts',
+    entry: 'src/routes/link-identifier/link-identifier.handler.ts',
     databaseAccess: 'readwrite',
   },
   request: {

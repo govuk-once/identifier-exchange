@@ -1,5 +1,5 @@
 /** linked_domain of IdX anchor rows, whose linked_domain_id is the idx_id. */
-export const IDX_DOMAIN = 'IdX';
+export const IDX_DOMAIN = 'idx';
 
 /**
  * Domains whose identifiers are anchored: linking one mints an IdX anchor

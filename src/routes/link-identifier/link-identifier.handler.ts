@@ -1,13 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { KMSClient } from '@aws-sdk/client-kms';
 import { z } from 'zod';
-import { createApiHandler } from '../api/create-api-handler.js';
-import { requireEnvVars } from '../api/require-env-vars.js';
-import { createDsqlClients } from '../db/dsql-clients.js';
-import { IdentifierAttributeDto } from '../db/identifier-attributes/identifier-attribute.js';
-import { saveIdentifierAttributes } from '../db/identifier-attributes/save-identifier-attributes.js';
-import { linkIdentifier } from '../db/linked-identifiers/link-identifier.query.js';
-import { linkIdentifierRequestBody } from '../routes/link-identifier.route.js';
+import { createApiHandler } from '../../api/create-api-handler.js';
+import { requireEnvVars } from '../../api/require-env-vars.js';
+import { createDsqlClients } from '../../db/dsql-clients.js';
+import { IdentifierAttributeDto } from '../../db/identifier-attributes/identifier-attribute.js';
+import { saveIdentifierAttributes } from '../../db/identifier-attributes/save-identifier-attributes.js';
+import { linkIdentifier } from '../../db/linked-identifiers/link-identifier.query.js';
+import { linkIdentifierRequestBody } from './link-identifier.route.js';
 
 // PUT /link: links a domain identifier to another domain's identifier,
 // minting an IdX anchor for anchoring domains, and saves any attributes

@@ -119,7 +119,7 @@ describe('Network Security Stack', () => {
   });
 
   describe('VPC endpoints', () => {
-    test.each(['kms', 'logs', 'secretsmanager', 'dsql', 'execute-api'])(
+    test.each(['kms', 'logs', 'secretsmanager', 'xray', 'dsql', 'execute-api'])(
       'has a private-DNS interface endpoint for %s in the isolated subnets',
       (service) => {
         const { template } = synth();
@@ -151,7 +151,7 @@ describe('Network Security Stack', () => {
     test('creates no other endpoints', () => {
       const { template } = synth();
 
-      template.resourceCountIs('AWS::EC2::VPCEndpoint', 7);
+      template.resourceCountIs('AWS::EC2::VPCEndpoint', 8);
     });
 
     test('has the one DSQL data-plane endpoint that every cluster in the VPC shares', () => {

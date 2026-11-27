@@ -13,6 +13,7 @@ const migrationFiles = readdirSync(import.meta.dirname).filter(
 const MIGRATOR_ENV = {
   READ_WRITE_ROLE_ARN: 'arn:aws:iam::123456789012:role/dev-identifier-exchange-dsql-readwrite',
   READ_ONLY_ROLE_ARN: 'arn:aws:iam::123456789012:role/dev-identifier-exchange-dsql-readonly',
+  DELETE_ROLE_ARN: 'arn:aws:iam::123456789012:role/dev-identifier-exchange-dsql-delete',
 };
 
 /**

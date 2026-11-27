@@ -40,6 +40,7 @@ export class DataMigratorStack extends cdk.Stack {
   public readonly migrator: nodejs.NodejsFunction;
   public readonly readOnlyRole: iam.Role;
   public readonly readWriteRole: iam.Role;
+  public readonly deleteRole: iam.Role;
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -71,7 +72,12 @@ export class DataMigratorStack extends cdk.Stack {
       { mutable: false },
     );
 
-    const workloadRole = (roleId: string, name: string, description: string) => {
+    const workloadRole = (
+      roleId: string,
+      name: string,
+      description: string,
+      { dataKeyAccess = true }: { dataKeyAccess?: boolean } = {},
+    ) => {
       const role = new iam.Role(this, roleId, {
         roleName: ContextHelper.get(this, 'resourceName', name),
         description,
@@ -91,8 +97,10 @@ export class DataMigratorStack extends cdk.Stack {
         new iam.PolicyStatement({ actions: ['dsql:DbConnect'], resources: [clusterArn] }),
       );
       dsqlEncryptionKey.grantDecrypt(role);
-      // Encrypt, Decrypt, ReEncrypt* and GenerateDataKey* on this key only.
-      dataEncryptionKey.grantEncryptDecrypt(role);
+      if (dataKeyAccess) {
+        // Encrypt, Decrypt, ReEncrypt* and GenerateDataKey* on this key only.
+        dataEncryptionKey.grantEncryptDecrypt(role);
+      }
       return role;
     };
     this.readOnlyRole = workloadRole(
@@ -104,6 +112,13 @@ export class DataMigratorStack extends cdk.Stack {
       'ReadWriteDbRole',
       'dsql-readwrite',
       'Connects to Aurora DSQL as readwrite_role',
+    );
+    // Deleting rows never needs a value decrypted, so no data key access.
+    this.deleteRole = workloadRole(
+      'DeleteDbRole',
+      'dsql-delete',
+      'Connects to Aurora DSQL as delete_role',
+      { dataKeyAccess: false },
     );
 
     const functionName = ContextHelper.get(this, 'resourceName', 'data-migrator');
@@ -127,6 +142,7 @@ export class DataMigratorStack extends cdk.Stack {
         CLUSTER_ENDPOINT: clusterEndpoint,
         READ_ONLY_ROLE_ARN: this.readOnlyRole.roleArn,
         READ_WRITE_ROLE_ARN: this.readWriteRole.roleArn,
+        DELETE_ROLE_ARN: this.deleteRole.roleArn,
         NODE_OPTIONS: '--enable-source-maps',
       },
       bundling: {
@@ -162,7 +178,7 @@ export class DataMigratorStack extends cdk.Stack {
       handler: this.migrator,
       timeout: MIGRATION_TIMEOUT,
       invocationType: triggers.InvocationType.REQUEST_RESPONSE,
-      executeAfter: [this.readOnlyRole, this.readWriteRole],
+      executeAfter: [this.readOnlyRole, this.readWriteRole, this.deleteRole],
     });
 
     for (const [parameterId, parameterName, stringValue] of [
@@ -175,6 +191,11 @@ export class DataMigratorStack extends cdk.Stack {
         'ReadWriteRoleArnParameter',
         SharedResources.dsqlReadWriteRoleArnParameter(this),
         this.readWriteRole.roleArn,
+      ],
+      [
+        'DeleteRoleArnParameter',
+        SharedResources.dsqlDeleteRoleArnParameter(this),
+        this.deleteRole.roleArn,
       ],
       [
         'MigratorFunctionNameParameter',

@@ -2,6 +2,8 @@ import type { Migration } from '../migrator/types.js';
 import * as createInitialTables from './20261112100123_create_initial_tables.js';
 import * as grantUserPermissions from './20261112101658_grant_user_permissions.js';
 import * as createLinkedIdentifiers from './20261126141927_create_linked_identifiers.js';
+import * as createIdentifierAttributes from './20261126152208_create_identifier_attributes.js';
+import * as addDeleteRole from './20261126154805_add_delete_role.js';
 
 /**
  * Every migration, in the order it applies. The Lambda bundle can't scan this
@@ -14,4 +16,6 @@ export const migrations: readonly Migration[] = [
   { name: '20261112100123_create_initial_tables', ...createInitialTables },
   { name: '20261112101658_grant_user_permissions', ...grantUserPermissions },
   { name: '20261126141927_create_linked_identifiers', ...createLinkedIdentifiers },
+  { name: '20261126152208_create_identifier_attributes', ...createIdentifierAttributes },
+  { name: '20261126154805_add_delete_role', ...addDeleteRole },
 ];

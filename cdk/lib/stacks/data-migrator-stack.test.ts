@@ -55,6 +55,7 @@ describe('Data Migrator Stack', () => {
     for (const roleName of [
       'pr-123-identifier-exchange-dsql-readonly',
       'pr-123-identifier-exchange-dsql-readwrite',
+      'pr-123-identifier-exchange-dsql-delete',
     ]) {
       template.hasResourceProperties('AWS::IAM::Role', { RoleName: roleName });
     }
@@ -101,6 +102,7 @@ describe('Data Migrator Stack', () => {
       CLUSTER_ENDPOINT: ssmRef(template, CLUSTER_ENDPOINT),
       READ_ONLY_ROLE_ARN: { 'Fn::GetAtt': [expect.stringMatching(/^ReadOnlyDbRole/), 'Arn'] },
       READ_WRITE_ROLE_ARN: { 'Fn::GetAtt': [expect.stringMatching(/^ReadWriteDbRole/), 'Arn'] },
+      DELETE_ROLE_ARN: { 'Fn::GetAtt': [expect.stringMatching(/^DeleteDbRole/), 'Arn'] },
       NODE_OPTIONS: '--enable-source-maps',
     });
   });
@@ -168,6 +170,23 @@ describe('Data Migrator Stack', () => {
     },
   );
 
+  test('DeleteDbRole can connect and decrypt with the cluster key, but cannot use the data key', () => {
+    const { template } = synth();
+
+    template.hasResourceProperties('AWS::IAM::Role', {
+      RoleName: 'development-identifier-exchange-dsql-delete',
+    });
+    template.hasResourceProperties('AWS::IAM::Policy', {
+      Roles: [{ Ref: Match.stringLikeRegexp('^DeleteDbRole') }],
+      PolicyDocument: {
+        Statement: [
+          { Action: 'dsql:DbConnect', Effect: 'Allow', Resource: ssmRef(template, CLUSTER_ARN) },
+          decryptDsqlKey(template),
+        ],
+      },
+    });
+  });
+
   test('runs migrations on deploy whenever the migrator version changes', () => {
     const { template } = synth();
 
@@ -181,6 +200,7 @@ describe('Data Migrator Stack', () => {
       expect.arrayContaining([
         expect.stringMatching(/^ReadOnlyDbRole/),
         expect.stringMatching(/^ReadWriteDbRole/),
+        expect.stringMatching(/^DeleteDbRole/),
       ]),
     );
   });
@@ -203,6 +223,7 @@ describe('Data Migrator Stack', () => {
     for (const [name, prefix] of [
       ['/development-identifier-exchange/dsql/read-only-role-arn', 'ReadOnlyDbRole'],
       ['/development-identifier-exchange/dsql/read-write-role-arn', 'ReadWriteDbRole'],
+      ['/development-identifier-exchange/dsql/delete-role-arn', 'DeleteDbRole'],
     ] as const) {
       template.hasResourceProperties('AWS::SSM::Parameter', {
         Name: name,

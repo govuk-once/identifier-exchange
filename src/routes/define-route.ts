@@ -26,8 +26,12 @@ export interface RouteDefinition {
   handler: {
     /** Lambda entry point, relative to the repository root. */
     entry: string;
-    /** Which DataMigratorStack workload role the function runs as. */
-    databaseAccess: 'readonly' | 'readwrite';
+    /**
+     * Which DataMigratorStack workload role the function runs as. Only
+     * 'delete' (delete_role) can DELETE from linked_identifiers and
+     * identifier_attributes; 'readwrite' cannot.
+     */
+    databaseAccess: 'readonly' | 'readwrite' | 'delete';
   };
   /**
    * Every method requires a SigV4-signed request (IAM authorization), so

@@ -4,7 +4,7 @@ import { GDSEnv } from '@govuk-connect/dev';
 import { describe, expect, test } from 'vitest';
 import { STANDARD_GATEWAY_RESPONSES } from '../api/gateway-responses.js';
 import { TEST_ENV, sharedSubnetIds, sharedVpcId, ssmRef } from '../testing/helpers.js';
-import { fixtureRoutes, getThingRoute } from '../testing/routes.js';
+import { deleteThingRoute, fixtureRoutes, getThingRoute } from '../testing/routes.js';
 import { ContextHelper } from '../utils/context-helper.js';
 import { ExchangeApiStack, type ExchangeApiStackProps } from './exchange-api.stack.js';
 
@@ -30,6 +30,7 @@ const CLUSTER_ENDPOINT = `${PREFIX}/dsql/cluster-endpoint`;
 const CLIENT_SG = `${PREFIX}/dsql/client-security-group-id`;
 const READ_ONLY_ROLE = `${PREFIX}/dsql/read-only-role-arn`;
 const READ_WRITE_ROLE = `${PREFIX}/dsql/read-write-role-arn`;
+const DELETE_ROLE = `${PREFIX}/dsql/delete-role-arn`;
 const DATA_KEY = `${PREFIX}/kms/data-encryption-key-arn`;
 const EXECUTE_API_ENDPOINT = `${PREFIX}/network/execute-api-endpoint-id`;
 
@@ -219,6 +220,14 @@ describe('Exchange Api Stack', () => {
     expect(JSON.stringify(findFunction(template, 'create-thing').properties.Role)).toContain(
       ssmRef(template, READ_WRITE_ROLE).Ref,
     );
+  });
+
+  test('a delete route runs as the delete role', () => {
+    const { template } = synth({ routes: [...fixtureRoutes, deleteThingRoute] });
+
+    const role = JSON.stringify(findFunction(template, 'delete-thing').properties.Role);
+    expect(role).toContain(ssmRef(template, DELETE_ROLE).Ref);
+    expect(role).not.toContain(ssmRef(template, READ_WRITE_ROLE).Ref);
   });
 
   test('binds each route handler to its method, with edge validation', () => {

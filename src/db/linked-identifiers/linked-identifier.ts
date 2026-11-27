@@ -1,3 +1,12 @@
+/** linked_domain of IdX anchor rows, whose linked_domain_id is the idx_id. */
+export const IDX_DOMAIN = 'IdX';
+
+/**
+ * Domains whose identifiers are anchored: linking one mints an IdX anchor
+ * (and so an idx_id) for it if it does not have one yet.
+ */
+export const ANCHORING_DOMAINS = ['app', 'web'] as const;
+
 /**
  * A linked_identifiers row as the pg driver returns it (snake_case columns).
  * Schema: src/db/schema/linked_identifiers.sql.

@@ -53,7 +53,7 @@ const kebabCase = (name: string) => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').
  * - every error API Gateway generates has the same JSON shape as handler
  *   errors (see addStandardGatewayResponses);
  * - functions run in the shared VPC's isolated subnets with the DSQL client
- *   security group, as the read-only or read-write database role from
+ *   security group, as the read-only, read-write or delete database role from
  *   DataMigratorStack, which can also encrypt and decrypt with the data key;
  * - each function logs JSON to its own CloudWatch log group with retention.
  *
@@ -104,6 +104,12 @@ export class ExchangeApiStack extends cdk.Stack {
         this,
         'ReadWriteDbRole',
         lookup(SharedResources.dsqlReadWriteRoleArnParameter(this)),
+        { mutable: false },
+      ),
+      delete: iam.Role.fromRoleArn(
+        this,
+        'DeleteDbRole',
+        lookup(SharedResources.dsqlDeleteRoleArnParameter(this)),
         { mutable: false },
       ),
     };

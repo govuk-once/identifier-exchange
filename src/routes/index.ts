@@ -1,5 +1,6 @@
 import type { RouteDefinition } from './define-route.js';
 import { getItemRoute } from './get-item.route.js';
+import { unlinkIdentifierRoute } from './unlink-identifier.route.js';
 
 /**
  * Every route ExchangeApiStack exposes. Add new routes here.
@@ -12,4 +13,4 @@ import { getItemRoute } from './get-item.route.js';
  *   3. pnpm export:openapi
  * Nothing else depends on it; the CDK tests use their own fixture routes.
  */
-export const routes: readonly RouteDefinition[] = [getItemRoute];
+export const routes: readonly RouteDefinition[] = [getItemRoute, unlinkIdentifierRoute];

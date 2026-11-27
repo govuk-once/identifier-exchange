@@ -5,7 +5,7 @@ import { defineRoute } from '../../../src/routes/define-route.js';
  * Routes for the CDK tests, so they do not depend on the API's real (or
  * example) routes.
  */
-const handler = (databaseAccess: 'readonly' | 'readwrite') => ({
+const handler = (databaseAccess: 'readonly' | 'readwrite' | 'delete') => ({
   entry: 'cdk/lib/testing/fixture.handler.ts',
   databaseAccess,
 });
@@ -53,6 +53,17 @@ export const listThingsRoute = defineRoute({
   summary: 'List things',
   handler: handler('readonly'),
   responses: { 200: { description: 'Things' } },
+});
+
+/** Not in fixtureRoutes; tests that need a delete-role function add it. */
+export const deleteThingRoute = defineRoute({
+  operationId: 'deleteThing',
+  method: 'DELETE',
+  path: '/things/{id}',
+  summary: 'Delete a thing',
+  handler: handler('delete'),
+  request: { params: z.object({ id: z.uuid() }) },
+  responses: { 200: { description: 'Deleted' } },
 });
 
 export const fixtureRoutes = [getThingRoute, createThingRoute, listThingsRoute];

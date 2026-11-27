@@ -4,6 +4,7 @@ import * as grantUserPermissions from './20261112101658_grant_user_permissions.j
 import * as createLinkedIdentifiers from './20261126141927_create_linked_identifiers.js';
 import * as createIdentifierAttributes from './20261126152208_create_identifier_attributes.js';
 import * as addDeleteRole from './20261126154805_add_delete_role.js';
+import * as grantDeleteRoleRowLock from './20261127141418_grant_delete_role_row_lock.js';
 
 /**
  * Every migration, in the order it applies. The Lambda bundle can't scan this
@@ -18,4 +19,5 @@ export const migrations: readonly Migration[] = [
   { name: '20261126141927_create_linked_identifiers', ...createLinkedIdentifiers },
   { name: '20261126152208_create_identifier_attributes', ...createIdentifierAttributes },
   { name: '20261126154805_add_delete_role', ...addDeleteRole },
+  { name: '20261127141418_grant_delete_role_row_lock', ...grantDeleteRoleRowLock },
 ];

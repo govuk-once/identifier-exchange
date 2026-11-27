@@ -3,10 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { DecryptCommand, GenerateDataKeyCommand, KMSClient } from '@aws-sdk/client-kms';
 import { describe, expect, test, vi } from 'vitest';
-import {
-  type IdentifierAttributeDSQL,
-  IdentifierAttributeDto,
-} from './identifier-attribute.dto.js';
+import { type IdentifierAttributeDSQL, IdentifierAttributeDto } from './identifier-attribute.js';
 
 const KEY_ID = 'arn:aws:kms:eu-west-2:123456789012:key/11111111-2222-3333-4444-555555555555';
 const LINKED_ID = '11111111-1111-1111-1111-111111111111';

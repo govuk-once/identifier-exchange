@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { apiErrorResponse } from '../api/errors.js';
-import { defineRoute } from './define-route.js';
+import { apiErrorResponse } from '../../api/errors.js';
+import { defineRoute } from '../define-route.js';
 
 // 1. Input validation schemas
 export const exchangeIdentifierPathParams = z.object({
@@ -53,7 +53,7 @@ export const exchangeIdentifierRoute = defineRoute({
   path: '/exchange/{domain}/{domainId}/{linkedDomain}',
   summary: 'Exchange an identifier for its linked identifier(s) in another domain',
   handler: {
-    entry: 'src/handlers/exchange-identifier.handler.ts',
+    entry: 'src/routes/exchange-identifier/exchange-identifier.handler.ts',
     databaseAccess: 'readonly',
   },
   request: {

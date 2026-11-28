@@ -1,18 +1,18 @@
 import { KMSClient } from '@aws-sdk/client-kms';
 import { z } from 'zod';
-import { createApiHandler, nullAsEmpty } from '../api/create-api-handler.js';
-import { NotFoundError } from '../api/http-errors.js';
-import { requireEnvVars } from '../api/require-env-vars.js';
-import { createDsqlClients } from '../db/dsql-clients.js';
-import { IdentifierAttributeDto } from '../db/identifier-attributes/identifier-attribute.dto.js';
+import { createApiHandler, nullAsEmpty } from '../../api/create-api-handler.js';
+import { NotFoundError } from '../../api/http-errors.js';
+import { requireEnvVars } from '../../api/require-env-vars.js';
+import { createDsqlClients } from '../../db/dsql-clients.js';
+import { IdentifierAttributeDto } from '../../db/identifier-attributes/identifier-attribute.js';
 import {
   decryptExchangedIdentifiers,
   findExchangedIdentifiers,
-} from '../db/linked-identifiers/exchange-identifier.query.js';
+} from '../../db/linked-identifiers/exchange-identifier.query.js';
 import {
   type ExchangeIdentifierResponse,
   exchangeIdentifierPathParams,
-} from '../routes/exchange-identifier.route.js';
+} from '../../routes/exchange-identifier/exchange-identifier.route.js';
 
 const { CLUSTER_ENDPOINT, DATA_ENCRYPTION_KEY_ARN } = requireEnvVars(
   'CLUSTER_ENDPOINT',

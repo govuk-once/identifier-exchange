@@ -3,7 +3,7 @@ import {
   type EncryptedAttribute,
   type IdentifierAttribute,
   IdentifierAttributeDto,
-} from '../identifier-attributes/identifier-attribute.dto.js';
+} from '../identifier-attributes/identifier-attribute.js';
 import {
   type LinkedIdentifier,
   type LinkedIdentifierDSQL,

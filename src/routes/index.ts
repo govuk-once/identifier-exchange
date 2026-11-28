@@ -1,5 +1,5 @@
 import type { RouteDefinition } from './define-route.js';
-import { exchangeIdentifierRoute } from './exchange-identifier.route.js';
+import { exchangeIdentifierRoute } from './exchange-identifier/exchange-identifier.route.js';
 import { getItemRoute } from './get-item.route.js';
 import { linkIdentifierRoute } from './link-identifier/link-identifier.route.js';
 

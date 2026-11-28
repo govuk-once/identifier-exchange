@@ -3,10 +3,10 @@ import { isDeepStrictEqual } from 'node:util';
 import { DecryptCommand, GenerateDataKeyCommand, KMSClient } from '@aws-sdk/client-kms';
 import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { apiErrorResponse } from '../api/errors.js';
-import type * as DsqlClientsModule from '../db/dsql-clients.js';
-import { IdentifierAttributeDto } from '../db/identifier-attributes/identifier-attribute.dto.js';
-import { exchangeIdentifierSuccessResponse } from '../routes/exchange-identifier.route.js';
+import { apiErrorResponse } from '../../api/errors.js';
+import type * as DsqlClientsModule from '../../db/dsql-clients.js';
+import { IdentifierAttributeDto } from '../../db/identifier-attributes/identifier-attribute.js';
+import { exchangeIdentifierSuccessResponse } from './exchange-identifier.route.js';
 
 const KEY_ARN = 'arn:aws:kms:eu-west-2:123456789012:key/11111111-2222-3333-4444-555555555555';
 const APP_ID = '11111111-1111-4111-8111-111111111111';
@@ -42,7 +42,7 @@ const db = vi.hoisted(() => {
   };
 });
 
-vi.mock('../db/dsql-clients.js', async (importOriginal) => ({
+vi.mock('../../db/dsql-clients.js', async (importOriginal) => ({
   ...(await importOriginal<typeof DsqlClientsModule>()),
   createDsqlClients: db.createDsqlClients,
 }));
